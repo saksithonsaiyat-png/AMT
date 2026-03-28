@@ -61,10 +61,10 @@
                 <div>
                     <input type="password" id="password-input" placeholder="รหัสผ่าน" 
                            class="w-full px-5 py-3.5 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all bg-slate-50 text-center text-lg tracking-widest">
-                    <p id="login-error" class="text-red-500 text-sm mt-2 hidden">รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่</p>
+                    <p id="login-error" class="text-red-500 text-sm mt-2 hidden">รหัสผ่านไม่ถูกต้อง กรุณาลองหม่</p>
                 </div>
                 <button type="submit" id="login-btn" class="w-full bg-indigo-600 text-white font-semibold px-5 py-3.5 rounded-2xl hover:bg-indigo-700 active:scale-95 transition-all shadow-lg shadow-indigo-200 disabled:opacity-50">
-                    เข้าสู่ระบ
+                    เข้าสู่ระบบ
                 </button>
             </form>
         </div>
@@ -152,6 +152,32 @@
                     </div>
                 </div>
 
+                <!-- สรุปเงินที่ต้องเก็บ / เงินที่ใช้ได้ -->
+                <div class="bg-white rounded-[1.5rem] shadow-sm border border-slate-100 p-5 space-y-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+                            <i class="fa-solid fa-scale-balanced text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-800">สรุปเงินจากรายได้</h3>
+                            <p class="text-xs text-slate-500">แยกยอดเงินที่ต้องเก็บและเงินที่ใช้ได้แบบชัดเจน</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="rounded-2xl bg-emerald-50 border border-emerald-100 p-4 text-center">
+                            <p class="text-[11px] text-emerald-600 font-bold uppercase tracking-wider">เงินที่ต้องเก็บรวม</p>
+                            <p id="must-save-total-display" class="text-xl font-bold text-emerald-700 mt-1">฿0</p>
+                        </div>
+                        <div class="rounded-2xl bg-indigo-50 border border-indigo-100 p-4 text-center">
+                            <p class="text-[11px] text-indigo-600 font-bold uppercase tracking-wider">เงินที่ใช้ได้รวม</p>
+                            <p id="usable-total-display" class="text-xl font-bold text-indigo-700 mt-1">฿0</p>
+                        </div>
+                    </div>
+                    <div id="last-income-summary" class="rounded-xl bg-slate-50 border border-slate-200 p-3 text-sm text-slate-600 text-center">
+                        ยังไม่มีข้อมูลรายได้ที่คำนวณ
+                    </div>
+                </div>
+
                 <!-- กราฟสถิติ -->
                 <div class="bg-white rounded-[1.5rem] shadow-sm border border-slate-100 p-5">
                     <div class="flex justify-between items-center mb-4">
@@ -167,7 +193,7 @@
                 <!-- เป้าหมายของฉัน -->
                 <div class="space-y-4">
                     <div class="flex justify-between items-center px-1">
-                        <h3 class="font-bold text-slate-800 text-lg">เป้าหมายของฉัน</h3>
+                        <h3 class="font-bold text-slate-800 text-lg">เป้าหมยของฉัน</h3>
                         <button onclick="openModal('add-goal-modal')" class="text-indigo-600 font-semibold text-sm flex items-center gap-1 hover:text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-lg transition-colors">
                             <i class="fa-solid fa-plus"></i> เพิ่มเป้าหมาย
                         </button>
@@ -372,6 +398,33 @@
             document.getElementById('last-update-display').innerText = formatDateTH(lastUpdateDate);
         }
 
+        function updateIncomeSplitUI() {
+            const incomeHistory = APP_STATE.history.filter(item => item.type === 'income');
+            const mustSaveTotal = incomeHistory.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+            const usableTotal = incomeHistory.reduce((sum, item) => sum + Number(item.usableAmount || 0), 0);
+
+            document.getElementById('must-save-total-display').innerText = `฿${formatCurrency(mustSaveTotal)}`;
+            document.getElementById('usable-total-display').innerText = `฿${formatCurrency(usableTotal)}`;
+
+            const latestIncome = incomeHistory.length > 0
+                ? [...incomeHistory].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))[0]
+                : null;
+
+            const summaryEl = document.getElementById('last-income-summary');
+            if (!latestIncome) {
+                summaryEl.innerText = 'ยังไม่มีข้อมูลรายได้ที่คำนวณ';
+                return;
+            }
+
+            const savePercent = latestIncome.savePercent || '-';
+            const totalIncome = Number(latestIncome.totalIncome || 0);
+            summaryEl.innerHTML = `
+                <span class="font-semibold text-slate-700">ล่าสุด:</span> รายได้ ${formatCurrency(totalIncome)}฿
+                • เก็บ ${formatCurrency(latestIncome.amount)}฿ (${savePercent}%)
+                • ใช้ได้ ${formatCurrency(latestIncome.usableAmount || 0)}฿
+            `;
+        }
+
         function persistLocalState() {
             const payload = {
                 goals: APP_STATE.goals,
@@ -481,6 +534,7 @@
                 loadLocalState();
                 const lastHistoryItem = APP_STATE.history.length > 0 ? APP_STATE.history[APP_STATE.history.length - 1] : null;
                 updateSummaryUI(lastHistoryItem?.date || getTodayDate());
+                updateIncomeSplitUI();
                 renderGoals();
                 renderHistory();
                 renderChart();
@@ -503,6 +557,7 @@
                 APP_STATE.history = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 const latestDate = APP_STATE.history.length > 0 ? APP_STATE.history.reduce((latest, item) => item.date > latest ? item.date : latest, APP_STATE.history[0].date) : getTodayDate();
                 updateSummaryUI(latestDate);
+                updateIncomeSplitUI();
                 renderHistory();
                 renderChart();
             }, (error) => console.error(error));
@@ -516,6 +571,7 @@
             APP_STATE.history.push({ id: `local-history-${Date.now()}`, ...item });
             persistLocalState();
             updateSummaryUI(item.date || getTodayDate());
+            updateIncomeSplitUI();
             renderHistory();
             renderChart();
         }
@@ -647,6 +703,7 @@
                     </div>
                     <div class="text-right">
                         <p class="font-bold text-emerald-600">+${formatCurrency(item.amount)} ฿</p>
+                        ${isIncome ? `<p class="text-[11px] text-indigo-500 mt-0.5">ใช้ได้ ${item.usableAmount != null ? formatCurrency(item.usableAmount) + ' ฿' : '-'}</p>` : ''}
                     </div>
                 `;
                 container.appendChild(card);
@@ -745,9 +802,11 @@
             
             document.getElementById('income-result').classList.remove('hidden');
             
-            // เตรียมข้อมูลเพื่อรอผู้ใช้กดยืนยัน
+            // เตรียม้อมูลเพื่อรอผู้ใช้กดยืนยัน
             APP_STATE.pendingIncomeSave = {
+                totalIncome: income,
                 amount: savedAmount,
+                usableAmount: usableAmount,
                 percent: percent
             };
         };
@@ -759,6 +818,9 @@
             const historyItem = {
                 date: getTodayDate(),
                 amount: data.amount,
+                usableAmount: data.usableAmount,
+                totalIncome: data.totalIncome,
+                savePercent: data.percent,
                 type: 'income',
                 title: `ออมอัตโนมัติ ${data.percent}% จากรายได้`,
                 timestamp: Date.now()
