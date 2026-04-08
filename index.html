@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FXPro Premium - แพลตฟอร์มเทรด Forex ครบวงจร</title>
+    <title>FXPro Ultimate - แพลตฟอร์มเทรดและวิเคราะห์หุ้นครบวงจร</title>
     
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -18,7 +18,7 @@
     <!-- TradingView Lightweight Charts -->
     <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
 
-    <!-- Tailwind Config for Custom Colors -->
+    <!-- Tailwind Config -->
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -27,24 +27,24 @@
                     fontFamily: { sans: ['Prompt', 'sans-serif'] },
                     colors: {
                         primary: '#3b82f6',
-                        primaryDark: '#1d4ed8',
                         secondary: '#10b981',
-                        dark: '#0B0E14',      /* Deep premium dark */
+                        dark: '#0B0E14',
                         darker: '#05070A',
-                        card: '#151A23',      /* Premium card color */
-                        cardHover: '#1A212D',
+                        card: '#151A23',
                         gold: '#F59E0B',
                         neonBlue: '#00f3ff',
-                        neonRed: '#ff0055'
+                        neonRed: '#ff0055',
+                        profit: '#00e676',
+                        loss: '#ff1744'
                     },
                     animation: {
-                        'float': 'float 6s ease-in-out infinite',
+                        'ticker': 'ticker 30s linear infinite',
                         'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
                     },
                     keyframes: {
-                        float: {
-                            '0%, 100%': { transform: 'translateY(0)' },
-                            '50%': { transform: 'translateY(-20px)' },
+                        ticker: {
+                            '0%': { transform: 'translateX(100%)' },
+                            '100%': { transform: 'translateX(-100%)' }
                         }
                     }
                 }
@@ -53,428 +53,377 @@
     </script>
 
     <style>
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #0B0E14; }
         ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #00f3ff; }
         
-        /* Glassmorphism */
+        body { background-color: #05070A; color: #f3f4f6; overflow-x: hidden; }
+        
         .glass-nav {
-            background: rgba(11, 14, 20, 0.8);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            background: rgba(11, 14, 20, 0.95);
+            backdrop-filter: blur(20px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
         .glass-card {
-            background: rgba(21, 26, 35, 0.7);
+            background: rgba(21, 26, 35, 0.6);
             backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.05);
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
         }
 
-        /* Glowing Orbs Background */
-        .orb-1 { position: fixed; top: -10%; left: -10%; width: 50vw; height: 50vw; background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(0,0,0,0) 70%); border-radius: 50%; z-index: -1; pointer-events: none; }
-        .orb-2 { position: fixed; bottom: -20%; right: -10%; width: 60vw; height: 60vw; background: radial-gradient(circle, rgba(16,185,129,0.1) 0%, rgba(0,0,0,0) 70%); border-radius: 50%; z-index: -1; pointer-events: none; }
-        .orb-3 { position: fixed; top: 40%; left: 30%; width: 40vw; height: 40vw; background: radial-gradient(circle, rgba(139,92,246,0.1) 0%, rgba(0,0,0,0) 70%); border-radius: 50%; z-index: -1; pointer-events: none; }
+        .reveal { opacity: 0; transform: translateY(20px); transition: all 0.6s ease-out; }
+        .reveal.active { opacity: 1; transform: translateY(0); }
 
-        /* All In Glowing Effect */
-        .all-in-active {
-            box-shadow: 0 0 15px rgba(255, 0, 85, 0.6);
-            border-color: #ff0055 !important;
-            background: rgba(255, 0, 85, 0.1) !important;
-        }
-
-        /* Fade In on Scroll */
-        .reveal {
-            opacity: 0;
-            transform: translateY(30px);
-            transition: all 0.8s ease-out;
-        }
-        .reveal.active {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* Active Nav Link */
-        .nav-link.active {
-            color: #00f3ff;
-            position: relative;
-        }
-        .nav-link.active::after {
-            content: ''; position: absolute; bottom: -4px; left: 0; width: 100%; height: 2px; background: #00f3ff; border-radius: 2px;
-            box-shadow: 0 0 8px #00f3ff;
-        }
+        /* Ticker Container */
+        .ticker-wrap { overflow: hidden; white-space: nowrap; box-sizing: border-box; }
+        .ticker-item { display: inline-block; padding: 0 2rem; font-family: monospace; font-size: 0.9rem; }
+        
+        /* Table Styles */
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); color: #9ca3af; font-size: 0.85rem; font-weight: 600; }
+        td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
+        tr:hover { background: rgba(255,255,255,0.02); }
+        
+        /* Indicator Buttons */
+        .ind-btn { padding: 4px 10px; font-size: 0.75rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); transition: 0.2s; cursor: pointer; }
+        .ind-btn.active { background: #3b82f6; border-color: #3b82f6; color: white; }
     </style>
 </head>
-<body class="bg-darker text-gray-100 font-sans antialiased relative overflow-x-hidden">
+<body class="antialiased relative">
 
-    <!-- Background Orbs -->
-    <div class="orb-1 animate-pulse-slow"></div>
-    <div class="orb-2 animate-float"></div>
-    <div class="orb-3 animate-pulse-slow" style="animation-delay: 2s;"></div>
+    <!-- SSL & Security Header (Visual) -->
+    <div class="bg-primary/10 border-b border-primary/20 text-center py-1 text-xs text-primary font-medium flex justify-center items-center gap-2">
+        <i class="fa-solid fa-shield-halved"></i> 256-bit SSL Encrypted & DDoS Protection Active | Low Latency Node: BKK-01
+    </div>
+
+    <!-- Real-time Ticker Tape -->
+    <div class="bg-darker border-b border-gray-800 ticker-wrap py-2 flex text-gray-300 relative z-40">
+        <div class="animate-ticker inline-block">
+            <span class="ticker-item"><b class="text-white">EUR/USD</b> 1.0845 <span class="text-profit"><i class="fa-solid fa-caret-up"></i> 0.12%</span></span>
+            <span class="ticker-item"><b class="text-white">GBP/USD</b> 1.2650 <span class="text-loss"><i class="fa-solid fa-caret-down"></i> 0.05%</span></span>
+            <span class="ticker-item"><b class="text-white">XAU/USD</b> 2,345.10 <span class="text-profit"><i class="fa-solid fa-caret-up"></i> 1.20%</span></span>
+            <span class="ticker-item"><b class="text-white">BTC/USDT</b> 64,200 <span class="text-profit"><i class="fa-solid fa-caret-up"></i> 2.50%</span></span>
+            <span class="ticker-item"><b class="text-white">AAPL</b> 173.50 <span class="text-loss"><i class="fa-solid fa-caret-down"></i> 0.30%</span></span>
+            <span class="ticker-item"><b class="text-white">TSLA</b> 175.22 <span class="text-profit"><i class="fa-solid fa-caret-up"></i> 4.10%</span></span>
+            <span class="ticker-item"><b class="text-white">PTT.BK</b> 34.50 <span class="text-gray-500">- 0.00%</span></span>
+        </div>
+    </div>
 
     <!-- Navbar -->
-    <nav class="glass-nav fixed top-0 w-full z-50 transition-all duration-300 py-3">
+    <nav class="glass-nav sticky top-0 w-full z-50 py-3">
         <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
-            <!-- Logo -->
-            <div class="flex items-center gap-2 cursor-pointer" onclick="window.scrollTo(0,0)">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-neonBlue to-primary flex items-center justify-center shadow-[0_0_15px_rgba(0,243,255,0.4)]">
-                    <i class="fa-solid fa-chart-line text-dark text-xl"></i>
+            <div class="flex items-center gap-3 cursor-pointer" onclick="window.scrollTo(0,0)">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-neonBlue to-primary flex items-center justify-center">
+                    <i class="fa-solid fa-chart-candlestick text-dark text-xl"></i>
                 </div>
-                <span class="text-2xl font-extrabold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">FX<span class="text-neonBlue">PRO</span></span>
+                <span class="text-xl font-extrabold text-white hidden sm:block">FX<span class="text-neonBlue">PRO</span></span>
             </div>
 
-            <!-- Desktop Menu -->
-            <div class="hidden md:flex items-center gap-8">
-                <a href="#dashboard" class="nav-link active font-medium hover:text-neonBlue transition duration-300" data-target="dashboard"><i class="fa-solid fa-chart-pie mr-1"></i> เทรด/วิเคราะห์</a>
-                <a href="#market" class="nav-link font-medium hover:text-neonBlue transition duration-300" data-target="market"><i class="fa-solid fa-globe mr-1"></i> สภาวะตลาด</a>
-                <a href="#ebook" class="nav-link font-medium hover:text-neonBlue transition duration-300" data-target="ebook"><i class="fa-solid fa-book mr-1"></i> คลังความรู้</a>
-                <a href="#vip" class="nav-link font-medium text-gold hover:text-yellow-300 transition duration-300 drop-shadow-[0_0_5px_rgba(245,158,11,0.5)]" data-target="vip"><i class="fa-solid fa-crown mr-1"></i> VIP</a>
+            <!-- Menu -->
+            <div class="hidden md:flex items-center gap-6 text-sm">
+                <a href="#terminal" class="hover:text-neonBlue transition"><i class="fa-solid fa-chart-line mr-1"></i> เทอร์มินัล</a>
+                <a href="#portfolio" class="hover:text-neonBlue transition"><i class="fa-solid fa-wallet mr-1"></i> พอร์ตลงทุน</a>
+                <a href="#screener" class="hover:text-neonBlue transition"><i class="fa-solid fa-filter mr-1"></i> สแกนหุ้น</a>
+                <a href="#news" class="hover:text-neonBlue transition"><i class="fa-solid fa-newspaper mr-1"></i> ข่าวสาร</a>
             </div>
 
-            <!-- Right Controls -->
+            <!-- Right -->
             <div class="flex items-center gap-4">
-                <!-- Profile / Login -->
-                <button id="userProfileBtn" class="flex items-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded-full transition duration-300 shadow-lg backdrop-blur-md">
-                    <img id="displayAvatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Guest" class="w-8 h-8 rounded-full bg-gray-800 border border-gray-600">
-                    <span id="displayUsername" class="text-sm font-medium hidden sm:block">Login (Firebase)</span>
-                </button>
-
-                <!-- Mobile Menu Button -->
-                <button class="md:hidden p-2 text-gray-300 hover:text-white" onclick="document.getElementById('mobileMenu').classList.toggle('hidden')">
-                    <i class="fa-solid fa-bars text-2xl"></i>
+                <button class="bg-primary/20 text-primary border border-primary/50 px-4 py-1.5 rounded-full text-sm font-medium hover:bg-primary hover:text-white transition">
+                    <i class="fa-solid fa-right-to-bracket mr-1"></i> ล็อกอิน
                 </button>
             </div>
         </div>
     </nav>
 
-    <!-- Mobile Menu -->
-    <div id="mobileMenu" class="hidden md:hidden glass-nav fixed top-[68px] left-0 w-full z-40 flex flex-col p-4 gap-2 border-b border-white/10">
-        <a href="#dashboard" class="p-3 rounded-lg hover:bg-white/5 font-medium" onclick="document.getElementById('mobileMenu').classList.add('hidden')"><i class="fa-solid fa-chart-pie w-6"></i> เทรด/วิเคราะห์</a>
-        <a href="#market" class="p-3 rounded-lg hover:bg-white/5 font-medium" onclick="document.getElementById('mobileMenu').classList.add('hidden')"><i class="fa-solid fa-globe w-6"></i> สภาวะตลาด</a>
-        <a href="#ebook" class="p-3 rounded-lg hover:bg-white/5 font-medium" onclick="document.getElementById('mobileMenu').classList.add('hidden')"><i class="fa-solid fa-book w-6"></i> คลังความรู้</a>
-        <a href="#vip" class="p-3 rounded-lg hover:bg-white/5 font-medium text-gold" onclick="document.getElementById('mobileMenu').classList.add('hidden')"><i class="fa-solid fa-crown w-6"></i> VIP</a>
-    </div>
-
-    <!-- Main Content -->
-    <main class="pt-24 pb-12">
+    <main class="pb-20">
         
-        <!-- ================= SECTION 1: DASHBOARD & CHART ================= -->
-        <section id="dashboard" class="min-h-[90vh] flex flex-col justify-center px-4 md:px-6 max-w-[1400px] mx-auto reveal active pt-10">
-            <!-- Header Text -->
-            <div class="mb-6 flex flex-col md:flex-row justify-between items-end">
-                <div>
-                    <h1 class="text-4xl md:text-5xl font-extrabold mb-2">Pro <span class="text-transparent bg-clip-text bg-gradient-to-r from-neonBlue to-primary">Terminal</span></h1>
-                    <p class="text-gray-400">วิเคราะห์กราฟแบบเรียลไทม์ พร้อมคำนวณความเสี่ยงด้วย AI-Powered System</p>
-                </div>
-            </div>
-
-            <div class="flex flex-col lg:flex-row gap-6 h-full lg:h-[70vh]">
+        <!-- ================= 1. TERMINAL & CHARTING ================= -->
+        <section id="terminal" class="px-4 py-6 max-w-[1400px] mx-auto reveal active">
+            <div class="flex flex-col lg:flex-row gap-4">
                 
-                <!-- Left: Chart Area -->
-                <div class="flex-1 flex flex-col glass-card rounded-2xl overflow-hidden relative group">
-                    <!-- Glow effect behind card -->
-                    <div class="absolute -inset-0.5 bg-gradient-to-r from-primary to-neonBlue opacity-0 group-hover:opacity-20 transition duration-500 rounded-2xl blur"></div>
-                    
-                    <div class="relative z-10 flex flex-col h-full bg-card/90">
-                        <!-- Chart Header -->
-                        <div class="p-4 border-b border-white/5 flex flex-wrap justify-between items-center gap-4 bg-black/20">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center shadow-lg">
-                                    <i class="fa-solid fa-coins text-dark font-bold"></i>
-                                </div>
-                                <div>
-                                    <h2 class="text-xl font-bold">XAUUSD <span class="text-sm font-normal text-gray-400">Gold / US Dollar</span></h2>
-                                    <p class="text-xs text-neonBlue flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-neonBlue animate-pulse"></span> Market Open</p>
-                                </div>
-                            </div>
-                            
-                            <!-- Plan Toggle -->
-                            <div class="flex items-center gap-3 bg-black/40 px-4 py-2 rounded-xl border border-white/10">
-                                <span class="text-sm font-medium text-gray-300"><i class="fa-solid fa-layer-group text-primary mr-1"></i> โซน FVG/Demand</span>
-                                <label class="relative inline-flex items-center cursor-pointer">
-                                  <input type="checkbox" id="togglePlan" class="sr-only peer" checked>
-                                  <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-neonBlue shadow-[0_0_10px_rgba(0,243,255,0.3)] peer-checked:shadow-[0_0_15px_rgba(0,243,255,0.6)]"></div>
-                                </label>
-                            </div>
+                <!-- Chart Section -->
+                <div class="flex-1 glass-card rounded-2xl border border-gray-800 flex flex-col overflow-hidden">
+                    <!-- Chart Header & Indicators -->
+                    <div class="p-3 bg-black/40 border-b border-gray-800 flex flex-wrap justify-between items-center gap-2">
+                        <div class="flex items-center gap-3">
+                            <span class="bg-orange-500/20 text-orange-400 px-2 py-1 rounded text-xs font-bold border border-orange-500/50">BTC/USD</span>
+                            <span class="text-xs text-green-400 animate-pulse"><i class="fa-solid fa-circle text-[8px]"></i> Real-time</span>
                         </div>
+                        
+                        <!-- Technical Indicators Toggles -->
+                        <div class="flex gap-2">
+                            <button id="btnMA" class="ind-btn" onclick="toggleIndicator('MA')">SMA 20</button>
+                            <button id="btnVol" class="ind-btn active" onclick="toggleIndicator('VOL')">Volume</button>
+                            <button id="btnZones" class="ind-btn active" onclick="toggleIndicator('ZONES')">Smart Zones</button>
+                        </div>
+                    </div>
 
-                        <!-- Chart Container -->
-                        <div id="tvchart" class="flex-1 w-full relative h-[400px] lg:h-full"></div>
+                    <!-- Main Chart -->
+                    <div id="tvchart" class="w-full h-[450px] bg-[#131722] relative">
+                        <!-- Loading Overlay -->
+                        <div id="chartLoading" class="absolute inset-0 bg-[#131722] z-10 flex flex-col items-center justify-center text-primary">
+                            <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-2"></i>
+                            <span class="text-sm">Connecting to Exchange...</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Right: Lot Size Calculator -->
-                <div class="w-full lg:w-[400px] glass-card rounded-2xl flex flex-col h-fit shrink-0 relative group">
-                    <div class="absolute -inset-0.5 bg-gradient-to-b from-secondary to-primary opacity-20 rounded-2xl blur"></div>
+                <!-- Lot Calculator (Sidebar) -->
+                <div class="w-full lg:w-[350px] glass-card rounded-2xl p-5 border border-gray-800 h-fit">
+                    <h2 class="text-lg font-bold text-white mb-4"><i class="fa-solid fa-calculator text-primary"></i> Risk Calculator</h2>
                     
-                    <div class="relative z-10 p-6 h-full flex flex-col gap-6 bg-card/90 rounded-2xl">
-                        <div class="text-center">
-                            <h2 class="text-2xl font-bold text-white flex items-center justify-center gap-2">
-                                <i class="fa-solid fa-calculator text-primary"></i> Position Size
-                            </h2>
-                            <p class="text-sm text-gray-400 mt-1">คำนวณหลอดเทรดแม่นยำ 100%</p>
+                    <div class="space-y-4 text-sm">
+                        <div>
+                            <label class="block text-gray-400 mb-1">เงินทุนพอร์ต (USD)</label>
+                            <input type="number" id="calcBalance" value="1000" class="w-full px-3 py-2 bg-dark border border-gray-700 rounded-lg text-white focus:border-primary focus:outline-none">
                         </div>
-                        
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-300 mb-1">ยอดเงินในพอร์ต (Balance USD)</label>
-                                <div class="relative group-focus-within:shadow-[0_0_15px_rgba(59,130,246,0.3)] transition rounded-xl">
-                                    <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 font-bold">$</span>
-                                    <input type="number" id="calcBalance" value="1000" class="w-full pl-10 pr-4 py-3 bg-dark border border-gray-700 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-white text-lg font-medium transition" placeholder="1000">
-                                </div>
-                            </div>
+                        <div>
+                            <label class="block text-gray-400 mb-1">Stop Loss (Points/Ticks)</label>
+                            <input type="number" id="calcSL" value="300" class="w-full px-3 py-2 bg-dark border border-gray-700 rounded-lg text-white focus:border-primary focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-gray-400 mb-1">ความเสี่ยง</label>
+                            <select id="calcRisk" class="w-full px-3 py-2 bg-dark border border-gray-700 rounded-lg text-white focus:outline-none">
+                                <option value="2">ปลอดภัย (2%)</option>
+                                <option value="5" selected>ปานกลาง (5%)</option>
+                                <option value="10">เสี่ยงสูง (10%)</option>
+                                <option value="100" class="text-red-500 font-bold">สายซิ่ง All-in (100%)</option>
+                            </select>
+                        </div>
 
-                            <div>
-                                <label class="block text-sm font-medium text-gray-300 mb-1">ระยะยอมขาดทุน (Stop Loss Point)</label>
-                                <div class="relative">
-                                    <input type="number" id="calcSL" value="300" class="w-full pl-4 pr-12 py-3 bg-dark border border-gray-700 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-white text-lg font-medium transition" placeholder="300">
-                                    <span class="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-500 text-sm">จุด</span>
-                                </div>
-                            </div>
+                        <button onclick="calculateLot()" class="w-full py-3 mt-2 bg-primary hover:bg-blue-600 text-white font-bold rounded-lg transition">
+                            คำนวณ Lot Size
+                        </button>
 
-                            <div>
-                                <label class="block text-sm font-medium text-gray-300 mb-2">เลือกกลยุทธ์ความเสี่ยง</label>
-                                <div class="grid grid-cols-1 gap-3" id="riskSelectors">
-                                    <!-- Safe -->
-                                    <label class="flex items-center p-3 border border-gray-700 bg-dark/50 rounded-xl cursor-pointer hover:border-secondary transition risk-label">
-                                        <input type="radio" name="riskLevel" value="2" class="hidden peer">
-                                        <div class="w-5 h-5 rounded-full border-2 border-gray-500 mr-3 peer-checked:border-secondary peer-checked:bg-secondary flex items-center justify-center transition">
-                                            <i class="fa-solid fa-check text-white text-xs opacity-0 peer-checked:opacity-100"></i>
-                                        </div>
-                                        <div>
-                                            <div class="font-medium text-white">Safe Trade <span class="text-secondary text-sm">(2%)</span></div>
-                                            <div class="text-xs text-gray-500">MM ตามหลักสากล ปลอดภัยพอร์ตโตยั่งยืน</div>
-                                        </div>
-                                    </label>
-
-                                    <!-- Medium -->
-                                    <label class="flex items-center p-3 border border-gray-700 bg-dark/50 rounded-xl cursor-pointer hover:border-yellow-500 transition risk-label">
-                                        <input type="radio" name="riskLevel" value="5" class="hidden peer" checked>
-                                        <div class="w-5 h-5 rounded-full border-2 border-gray-500 mr-3 peer-checked:border-yellow-500 peer-checked:bg-yellow-500 flex items-center justify-center transition">
-                                            <i class="fa-solid fa-check text-dark text-xs opacity-0 peer-checked:opacity-100"></i>
-                                        </div>
-                                        <div>
-                                            <div class="font-medium text-white">Aggressive <span class="text-yellow-500 text-sm">(5%)</span></div>
-                                            <div class="text-xs text-gray-500">รับความเสี่ยงได้ อยากปั้นพอร์ตไวขึ้น</div>
-                                        </div>
-                                    </label>
-
-                                    <!-- ALL IN (สายซิ่ง) -->
-                                    <label class="flex items-center p-3 border border-red-900/50 bg-red-950/20 rounded-xl cursor-pointer hover:border-neonRed transition relative overflow-hidden risk-label" id="labelAllIn">
-                                        <div class="absolute inset-0 bg-gradient-to-r from-red-600/10 to-transparent"></div>
-                                        <input type="radio" name="riskLevel" value="100" class="hidden peer">
-                                        <div class="w-5 h-5 rounded-full border-2 border-red-500 mr-3 peer-checked:border-neonRed peer-checked:bg-neonRed flex items-center justify-center transition relative z-10 shadow-[0_0_10px_rgba(255,0,85,0.8)]">
-                                            <i class="fa-solid fa-fire text-white text-xs opacity-0 peer-checked:opacity-100"></i>
-                                        </div>
-                                        <div class="relative z-10">
-                                            <div class="font-bold text-neonRed drop-shadow-[0_0_5px_rgba(255,0,85,0.5)]"><i class="fa-solid fa-skull"></i> สายซิ่ง ALL-IN <span class="text-white text-sm">(100% Margin)</span></div>
-                                            <div class="text-xs text-red-400">ใส่สุดหลอด แตกคือแตก รวยคือรวย (Risk = Balance)</div>
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <button id="btnCalculate" class="w-full py-4 mt-2 bg-gradient-to-r from-primaryDark to-neonBlue hover:from-primary hover:to-blue-400 text-white font-bold text-lg rounded-xl shadow-[0_0_20px_rgba(0,243,255,0.3)] hover:shadow-[0_0_30px_rgba(0,243,255,0.6)] transition transform hover:-translate-y-1 flex justify-center items-center gap-2">
-                                <i class="fa-solid fa-bolt"></i> Calculate Lot Size
-                            </button>
-
-                            <!-- Result Box -->
-                            <div id="calcResult" class="hidden mt-4 p-5 rounded-xl bg-gradient-to-br from-gray-900 to-black border border-gray-800 text-center relative overflow-hidden">
-                                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-neonBlue to-transparent"></div>
-                                <p class="text-sm text-gray-400">แนะนำให้ออกหลอด (Lot Size)</p>
-                                <p class="text-4xl font-black text-white mt-1 drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]"><span id="resultLot">0.00</span></p>
-                                <div class="mt-3 pt-3 border-t border-gray-800 flex justify-between text-sm">
-                                    <span class="text-gray-500">ยอดเสียสูงสุด (SL):</span>
-                                    <span class="text-red-400 font-medium">-$<span id="resultRiskAmount">0</span></span>
-                                </div>
-                            </div>
+                        <div id="calcResult" class="hidden mt-2 p-4 rounded-lg bg-black border border-gray-800 text-center">
+                            <p class="text-gray-400 text-xs">ปริมาณ Lot ที่แนะนำ</p>
+                            <p class="text-3xl font-black text-neonBlue" id="resultLot">0.00</p>
+                            <p class="text-red-400 text-xs mt-2">ยอดเสียสูงสุด: $<span id="resultRiskAmount">0</span></p>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- ================= SECTION 2: MARKET OVERVIEW (NEW) ================= -->
-        <section id="market" class="min-h-[80vh] py-20 px-4 md:px-6 max-w-7xl mx-auto reveal pt-24 mt-10">
-            <div class="text-center mb-12">
-                <h2 class="text-3xl md:text-4xl font-extrabold mb-4">Market <span class="text-secondary">Overview</span></h2>
-                <p class="text-gray-400 max-w-2xl mx-auto">ภาพรวมตลาด สภาวะเงินทุน และปฏิทินเศรษฐกิจที่สำคัญประจำสัปดาห์</p>
+        <!-- ================= 2. PORTFOLIO & WATCHLIST ================= -->
+        <section id="portfolio" class="px-4 py-10 max-w-[1400px] mx-auto reveal">
+            <h2 class="text-2xl font-bold mb-6 border-l-4 border-neonBlue pl-3">การจัดการพอร์ต & Watchlist</h2>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Portfolio Tracker -->
+                <div class="lg:col-span-2 glass-card rounded-2xl border border-gray-800 p-5 overflow-x-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-lg"><i class="fa-solid fa-briefcase text-gold"></i> พอร์ตโฟลิโอจำลอง (Mock Portfolio)</h3>
+                        <span class="text-sm font-bold text-profit">Total P/L: +$1,245.50</span>
+                    </div>
+                    <table class="min-w-[600px]">
+                        <thead>
+                            <tr>
+                                <th>สินทรัพย์ (Asset)</th>
+                                <th>จำนวนถือครอง</th>
+                                <th>ราคาต้นทุน (Avg)</th>
+                                <th>ราคาปัจจุบัน (CMP)</th>
+                                <th class="text-right">กำไร/ขาดทุน (P/L)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><b class="text-white">AAPL</b> (Apple Inc.)</td>
+                                <td>50 Shares</td>
+                                <td>$160.00</td>
+                                <td>$173.50</td>
+                                <td class="text-right text-profit font-bold">+$675.00 (+8.4%)</td>
+                            </tr>
+                            <tr>
+                                <td><b class="text-white">TSLA</b> (Tesla)</td>
+                                <td>20 Shares</td>
+                                <td>$190.00</td>
+                                <td>$175.22</td>
+                                <td class="text-right text-loss font-bold">-$295.60 (-7.7%)</td>
+                            </tr>
+                            <tr>
+                                <td><b class="text-white">BTC/USDT</b> (Bitcoin)</td>
+                                <td>0.05 BTC</td>
+                                <td>$45,000</td>
+                                <td>$64,200</td>
+                                <td class="text-right text-profit font-bold">+$960.00 (+42.6%)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Watchlist -->
+                <div class="glass-card rounded-2xl border border-gray-800 p-5">
+                    <h3 class="font-bold text-lg mb-4"><i class="fa-solid fa-star text-yellow-400"></i> Watchlist</h3>
+                    <ul class="space-y-3">
+                        <li class="flex justify-between items-center bg-black/30 p-3 rounded-lg border border-white/5 hover:border-primary transition cursor-pointer">
+                            <div><div class="font-bold">NVDA</div><div class="text-xs text-gray-500">Nvidia Corp.</div></div>
+                            <div class="text-right"><div class="font-medium">$850.20</div><div class="text-xs text-profit">+2.4%</div></div>
+                        </li>
+                        <li class="flex justify-between items-center bg-black/30 p-3 rounded-lg border border-white/5 hover:border-primary transition cursor-pointer">
+                            <div><div class="font-bold">PTT.BK</div><div class="text-xs text-gray-500">ปตท.</div></div>
+                            <div class="text-right"><div class="font-medium">฿34.50</div><div class="text-xs text-gray-400">0.0%</div></div>
+                        </li>
+                        <li class="flex justify-between items-center bg-black/30 p-3 rounded-lg border border-white/5 hover:border-primary transition cursor-pointer">
+                            <div><div class="font-bold">ETH/USDT</div><div class="text-xs text-gray-500">Ethereum</div></div>
+                            <div class="text-right"><div class="font-medium">$3,450.00</div><div class="text-xs text-loss">-1.2%</div></div>
+                        </li>
+                    </ul>
+                    <button class="w-full mt-4 py-2 border border-dashed border-gray-600 rounded-lg text-gray-400 hover:text-white hover:border-white transition text-sm">
+                        + เพิ่มสินทรัพย์
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= 3. STOCK SCREENER & FUNDAMENTALS ================= -->
+        <section id="screener" class="px-4 py-10 max-w-[1400px] mx-auto reveal">
+            <h2 class="text-2xl font-bold mb-6 border-l-4 border-neonBlue pl-3">สแกนหุ้น & ข้อมูลพื้นฐาน (Fundamentals)</h2>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                
+                <!-- Screener Controls -->
+                <div class="lg:col-span-1 glass-card rounded-2xl border border-gray-800 p-5 h-fit">
+                    <h3 class="font-bold mb-4"><i class="fa-solid fa-filter text-primary"></i> ตั้งค่าเงื่อนไขกรองหุ้น</h3>
+                    
+                    <div class="space-y-4 text-sm">
+                        <div>
+                            <label class="block text-gray-400 mb-1">P/E Ratio (น้อยกว่า)</label>
+                            <input type="range" id="peFilter" min="5" max="50" value="20" class="w-full accent-primary" oninput="document.getElementById('peVal').innerText=this.value">
+                            <div class="text-right text-xs text-neonBlue">P/E < <span id="peVal">20</span></div>
+                        </div>
+                        <div>
+                            <label class="block text-gray-400 mb-1">Dividend Yield (มากกว่า %)</label>
+                            <input type="range" id="divFilter" min="0" max="10" value="3" step="0.5" class="w-full accent-primary" oninput="document.getElementById('divVal').innerText=this.value">
+                            <div class="text-right text-xs text-neonBlue">Div > <span id="divVal">3</span>%</div>
+                        </div>
+                        <div>
+                            <label class="block text-gray-400 mb-1">ROE (มากกว่า %)</label>
+                            <input type="number" id="roeFilter" value="10" class="w-full px-2 py-1 bg-dark border border-gray-700 rounded text-white">
+                        </div>
+                        <button onclick="scanStocks()" class="w-full py-2 bg-gradient-to-r from-primary to-blue-600 text-white rounded font-bold shadow-lg shadow-blue-500/20">
+                            สแกนทันที
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Screener Results -->
+                <div class="lg:col-span-3 glass-card rounded-2xl border border-gray-800 p-5 overflow-x-auto">
+                    <h3 class="font-bold mb-4">ผลการสแกน (Found: <span id="scanCount" class="text-primary">0</span>)</h3>
+                    <table class="min-w-[600px]">
+                        <thead>
+                            <tr>
+                                <th>หุ้น (Symbol)</th>
+                                <th>ราคา (Price)</th>
+                                <th>P/E</th>
+                                <th>P/BV</th>
+                                <th>ROE (%)</th>
+                                <th>Dividend (%)</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scanResultsTable">
+                            <!-- JS will inject rows here -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Market Sentiment (2 Columns on large screens) -->
-                <div class="lg:col-span-2 glass-card rounded-2xl p-6">
-                    <h3 class="text-xl font-bold mb-6 flex items-center gap-2"><i class="fa-solid fa-scale-balanced text-primary"></i> Market Sentiment (แรงซื้อ/แรงขาย)</h3>
-                    <div class="space-y-6">
-                        <!-- EURUSD -->
-                        <div>
-                            <div class="flex justify-between mb-2">
-                                <span class="font-bold flex items-center gap-2"><img src="https://flagcdn.com/w20/eu.png" class="w-5 h-3"> EUR/USD</span>
-                                <span class="text-sm text-gray-400">65% Buyers</span>
-                            </div>
-                            <div class="w-full h-3 bg-red-500/30 rounded-full overflow-hidden flex">
-                                <div class="h-full bg-secondary shadow-[0_0_10px_rgba(16,185,129,0.8)]" style="width: 65%"></div>
-                                <div class="h-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]" style="width: 35%"></div>
+            <!-- Company Profile (Fundamental Snapshot) -->
+            <div class="mt-6 glass-card rounded-2xl border border-gray-800 p-6">
+                <div class="flex justify-between items-start mb-6 border-b border-gray-800 pb-4">
+                    <div>
+                        <h3 class="text-2xl font-bold text-white">Apple Inc. (AAPL)</h3>
+                        <p class="text-sm text-gray-400">Technology | Consumer Electronics</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-2xl font-black text-white">$173.50</div>
+                        <div class="text-sm text-profit">+0.45 (+0.26%)</div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-sm">
+                    <div><span class="block text-gray-500">Market Cap</span><span class="font-bold">2.68 Trillion</span></div>
+                    <div><span class="block text-gray-500">P/E Ratio</span><span class="font-bold text-yellow-400">26.50</span></div>
+                    <div><span class="block text-gray-500">EPS (TTM)</span><span class="font-bold">6.42</span></div>
+                    <div><span class="block text-gray-500">Dividend Yield</span><span class="font-bold">0.55%</span></div>
+                    <div><span class="block text-gray-500">ROE</span><span class="font-bold text-profit">156.40%</span></div>
+                    <div><span class="block text-gray-500">P/BV</span><span class="font-bold">39.12</span></div>
+                    <div><span class="block text-gray-500">52W High</span><span class="font-bold">199.62</span></div>
+                    <div><span class="block text-gray-500">52W Low</span><span class="font-bold">155.98</span></div>
+                </div>
+                <div class="mt-6 pt-4 border-t border-gray-800 text-sm text-gray-400">
+                    <p><b>Company Profile:</b> Apple Inc. designs, manufactures, and markets smartphones, personal computers, tablets, wearables, and accessories worldwide. It also sells various related services.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= 4. NEWS & ECONOMIC CALENDAR ================= -->
+        <section id="news" class="px-4 py-10 max-w-[1400px] mx-auto reveal">
+            <h2 class="text-2xl font-bold mb-6 border-l-4 border-neonBlue pl-3">ข่าวสาร & ปฏิทินเศรษฐกิจ (News & Calendar)</h2>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- News Feed -->
+                <div class="glass-card rounded-2xl border border-gray-800 p-5">
+                    <h3 class="font-bold text-lg mb-4"><i class="fa-regular fa-newspaper text-primary"></i> Market News Feed</h3>
+                    <div class="space-y-4">
+                        <div class="flex gap-4 group cursor-pointer border-b border-gray-800 pb-4">
+                            <div class="w-20 h-20 bg-gray-800 rounded-lg flex-shrink-0 bg-[url('https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=150&q=80')] bg-cover"></div>
+                            <div>
+                                <h4 class="font-bold group-hover:text-primary transition text-sm">FED ประกาศคงอัตราดอกเบี้ย ส่งผลตลาดหุ้นพุ่งกระฉูด</h4>
+                                <p class="text-xs text-gray-400 mt-1 line-clamp-2">ธนาคารกลางสหรัฐประกาศคงอัตราดอกเบี้ยที่ระดับ 5.25-5.50% ตามคาด พร้อมส่งสัญญาณอาจลดดอกเบี้ย 3 ครั้งในปีนี้...</p>
+                                <span class="text-[10px] text-gray-500 mt-2 block"><i class="fa-regular fa-clock"></i> 2 ชั่วโมงที่แล้ว</span>
                             </div>
                         </div>
-                        <!-- GBPUSD -->
-                        <div>
-                            <div class="flex justify-between mb-2">
-                                <span class="font-bold flex items-center gap-2"><img src="https://flagcdn.com/w20/gb.png" class="w-5 h-3"> GBP/USD</span>
-                                <span class="text-sm text-gray-400">40% Buyers</span>
-                            </div>
-                            <div class="w-full h-3 bg-red-500/30 rounded-full overflow-hidden flex">
-                                <div class="h-full bg-secondary shadow-[0_0_10px_rgba(16,185,129,0.8)]" style="width: 40%"></div>
-                                <div class="h-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]" style="width: 60%"></div>
+                        <div class="flex gap-4 group cursor-pointer border-b border-gray-800 pb-4">
+                            <div class="w-20 h-20 bg-gray-800 rounded-lg flex-shrink-0 bg-[url('https://images.unsplash.com/photo-1621504450181-5d356f61d307?auto=format&fit=crop&w=150&q=80')] bg-cover"></div>
+                            <div>
+                                <h4 class="font-bold group-hover:text-primary transition text-sm">Bitcoin ทะลุ $64K กองทุน ETF กว้านซื้อต่อเนื่อง</h4>
+                                <p class="text-xs text-gray-400 mt-1 line-clamp-2">แรงซื้อจากสถาบันการเงินผ่าน Spot Bitcoin ETF ดันราคาเหรียญพี่ใหญ่ทำจุดสูงสุดใหม่ในรอบหลายเดือน...</p>
+                                <span class="text-[10px] text-gray-500 mt-2 block"><i class="fa-regular fa-clock"></i> 5 ชั่วโมงที่แล้ว</span>
                             </div>
                         </div>
-                        <!-- USDJPY -->
-                        <div>
-                            <div class="flex justify-between mb-2">
-                                <span class="font-bold flex items-center gap-2"><img src="https://flagcdn.com/w20/us.png" class="w-5 h-3"> USD/JPY</span>
-                                <span class="text-sm text-gray-400">80% Buyers (Strong Bullish)</span>
-                            </div>
-                            <div class="w-full h-3 bg-red-500/30 rounded-full overflow-hidden flex">
-                                <div class="h-full bg-secondary shadow-[0_0_10px_rgba(16,185,129,0.8)]" style="width: 80%"></div>
-                                <div class="h-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]" style="width: 20%"></div>
+                        <div class="flex gap-4 group cursor-pointer">
+                            <div class="w-20 h-20 bg-gray-800 rounded-lg flex-shrink-0 bg-[url('https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&w=150&q=80')] bg-cover"></div>
+                            <div>
+                                <h4 class="font-bold group-hover:text-primary transition text-sm">Apple เปิดตัว AI ใหม่ ผสานเข้ากับ iOS 18</h4>
+                                <p class="text-xs text-gray-400 mt-1 line-clamp-2">หุ้น AAPL ตอบรับเชิงบวกหลังนักวิเคราะห์มองว่าการขยับตัวเข้าสู่ตลาด Generative AI จะช่วยเพิ่มยอดขาย iPhone...</p>
+                                <span class="text-[10px] text-gray-500 mt-2 block"><i class="fa-regular fa-clock"></i> 1 วันที่แล้ว</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Economic Calendar -->
-                <div class="glass-card rounded-2xl p-6">
-                    <h3 class="text-xl font-bold mb-6 flex items-center gap-2"><i class="fa-solid fa-calendar-days text-gold"></i> ข่าวเศรษฐกิจสำคัญ</h3>
-                    <div class="space-y-4">
-                        <div class="p-3 bg-dark/50 rounded-xl border-l-4 border-red-500 hover:bg-dark transition">
-                            <div class="flex justify-between text-sm mb-1">
-                                <span class="text-gray-400">วันนี้ 19:30</span>
-                                <span class="text-red-500"><i class="fa-solid fa-fire"></i><i class="fa-solid fa-fire"></i><i class="fa-solid fa-fire"></i></span>
+                <div class="glass-card rounded-2xl border border-gray-800 p-5">
+                    <h3 class="font-bold text-lg mb-4"><i class="fa-regular fa-calendar text-gold"></i> Economic Calendar</h3>
+                    <div class="space-y-3">
+                        <div class="bg-black/40 p-3 rounded-xl border-l-4 border-red-500 flex justify-between items-center">
+                            <div>
+                                <div class="text-xs text-gray-400 mb-1">วันนี้ 19:30 <img src="https://flagcdn.com/w20/us.png" class="inline w-4 ml-1"></div>
+                                <div class="font-bold text-sm">ดัชนีราคาผู้บริโภค (CPI) m/m</div>
+                                <div class="text-xs text-gray-500 mt-1">คาดการณ์: 0.3% | ครั้งก่อน: 0.4%</div>
                             </div>
-                            <div class="font-bold">Non-Farm Payrolls (USD)</div>
-                            <div class="text-xs text-gray-500 mt-1">คาดการณ์: 180K | ก่อนหน้า: 215K</div>
+                            <div class="text-red-500 text-xs"><i class="fa-solid fa-fire"></i><i class="fa-solid fa-fire"></i><i class="fa-solid fa-fire"></i></div>
                         </div>
-                        <div class="p-3 bg-dark/50 rounded-xl border-l-4 border-yellow-500 hover:bg-dark transition">
-                            <div class="flex justify-between text-sm mb-1">
-                                <span class="text-gray-400">พรุ่งนี้ 20:00</span>
-                                <span class="text-yellow-500"><i class="fa-solid fa-fire"></i><i class="fa-solid fa-fire"></i></span>
+                        <div class="bg-black/40 p-3 rounded-xl border-l-4 border-red-500 flex justify-between items-center">
+                            <div>
+                                <div class="text-xs text-gray-400 mb-1">พฤหัส 19:30 <img src="https://flagcdn.com/w20/us.png" class="inline w-4 ml-1"></div>
+                                <div class="font-bold text-sm">จำนวนผู้ขอรับสวัสดิการว่างงาน (Initial Jobless Claims)</div>
+                                <div class="text-xs text-gray-500 mt-1">คาดการณ์: 215K | ครั้งก่อน: 210K</div>
                             </div>
-                            <div class="font-bold">Fed Chair Powell Speaks</div>
+                            <div class="text-red-500 text-xs"><i class="fa-solid fa-fire"></i><i class="fa-solid fa-fire"></i><i class="fa-solid fa-fire"></i></div>
                         </div>
-                        <div class="p-3 bg-dark/50 rounded-xl border-l-4 border-red-500 hover:bg-dark transition">
-                            <div class="flex justify-between text-sm mb-1">
-                                <span class="text-gray-400">พุธ 19:30</span>
-                                <span class="text-red-500"><i class="fa-solid fa-fire"></i><i class="fa-solid fa-fire"></i><i class="fa-solid fa-fire"></i></span>
+                        <div class="bg-black/40 p-3 rounded-xl border-l-4 border-yellow-500 flex justify-between items-center">
+                            <div>
+                                <div class="text-xs text-gray-400 mb-1">ศุกร์ 09:00 <img src="https://flagcdn.com/w20/cn.png" class="inline w-4 ml-1"></div>
+                                <div class="font-bold text-sm">GDP จีน (y/y)</div>
+                                <div class="text-xs text-gray-500 mt-1">คาดการณ์: 5.0% | ครั้งก่อน: 5.2%</div>
                             </div>
-                            <div class="font-bold">CPI m/m (เงินเฟ้อ)</div>
+                            <div class="text-yellow-500 text-xs"><i class="fa-solid fa-fire"></i><i class="fa-solid fa-fire"></i></div>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- ================= SECTION 3: E-BOOK ================= -->
-        <section id="ebook" class="min-h-[80vh] py-20 px-4 md:px-6 max-w-7xl mx-auto reveal pt-24 mt-10">
-            <div class="text-center mb-12">
-                <h2 class="text-3xl md:text-4xl font-extrabold mb-4">คลังความรู้ <span class="text-primary">E-Book & Courses</span></h2>
-                <p class="text-gray-400 max-w-2xl mx-auto">ระบบเทรดอัปเดตใหม่ล่าสุด ศึกษาฟรีสำหรับสมาชิกและบทเรียนพิเศษสำหรับ VIP</p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <!-- Book 1 -->
-                <div class="glass-card rounded-2xl overflow-hidden group hover:-translate-y-2 transition duration-300">
-                    <div class="h-48 bg-[url('https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80')] bg-cover bg-center relative">
-                        <div class="absolute inset-0 bg-gradient-to-t from-card to-transparent"></div>
-                        <div class="absolute top-3 right-3 bg-secondary text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">Free</div>
-                        <div class="absolute bottom-4 left-4">
-                            <h3 class="text-2xl font-bold text-white drop-shadow-lg">SMC Mastery</h3>
-                        </div>
-                    </div>
-                    <div class="p-6">
-                        <p class="text-sm text-gray-400 mb-5">เข้าใจพฤติกรรมรายใหญ่ (Smart Money) การหา Order Block, FVG และจุดเข้า Liquidity Sweeps</p>
-                        <button class="w-full py-3 bg-white/10 hover:bg-primary text-white rounded-xl transition font-medium border border-white/10 group-hover:border-primary">
-                            เริ่มอ่านเลย <i class="fa-solid fa-arrow-right ml-1"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Book 2 -->
-                <div class="glass-card rounded-2xl overflow-hidden group hover:-translate-y-2 transition duration-300">
-                    <div class="h-48 bg-[url('https://images.unsplash.com/photo-1535320903710-d993d3d77d29?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80')] bg-cover bg-center relative">
-                        <div class="absolute inset-0 bg-gradient-to-t from-card to-transparent"></div>
-                        <div class="absolute top-3 right-3 bg-secondary text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">Free</div>
-                        <div class="absolute bottom-4 left-4">
-                            <h3 class="text-2xl font-bold text-white drop-shadow-lg">Trading Psychology</h3>
-                        </div>
-                    </div>
-                    <div class="p-6">
-                        <p class="text-sm text-gray-400 mb-5">คุมอารมณ์ คุมพอร์ต ทำอย่างไรไม่ให้ Overtrade และวิธีสร้างวินัยเหล็กในการเทรดระยะยาว</p>
-                        <button class="w-full py-3 bg-white/10 hover:bg-primary text-white rounded-xl transition font-medium border border-white/10 group-hover:border-primary">
-                            เริ่มอ่านเลย <i class="fa-solid fa-arrow-right ml-1"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Book 3 (VIP) -->
-                <div class="glass-card rounded-2xl overflow-hidden group hover:-translate-y-2 transition duration-300 relative border-gold/30 shadow-[0_0_20px_rgba(245,158,11,0.1)] hover:shadow-[0_0_30px_rgba(245,158,11,0.3)]">
-                    <div class="h-48 bg-gradient-to-br from-gray-900 to-black relative flex items-center justify-center">
-                        <i class="fa-solid fa-gem text-5xl text-gold opacity-20 absolute"></i>
-                        <div class="absolute inset-0 bg-gradient-to-t from-card to-transparent"></div>
-                        <div class="absolute top-3 right-3 bg-gold text-dark text-xs font-bold px-3 py-1 rounded-full shadow-lg"><i class="fa-solid fa-lock text-xs"></i> VIP Only</div>
-                        <div class="absolute bottom-4 left-4">
-                            <h3 class="text-2xl font-bold text-gold drop-shadow-lg">Sniper Entry & Scalping</h3>
-                        </div>
-                    </div>
-                    <div class="p-6">
-                        <p class="text-sm text-gray-400 mb-5">สูตรลับการเข้าเทรดสั้นทำกำไรรายวัน M1-M5 พร้อมระบบตั้งเตือน Signal แม่นยำ 85%</p>
-                        <button class="w-full py-3 bg-gradient-to-r from-yellow-600 to-gold hover:from-gold hover:to-yellow-400 text-dark rounded-xl transition font-bold shadow-[0_0_15px_rgba(245,158,11,0.4)]">
-                            อัปเกรด VIP เพื่อปลดล็อก
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- ================= SECTION 4: VIP / DISCORD ================= -->
-        <section id="vip" class="min-h-[80vh] py-20 px-4 md:px-6 max-w-5xl mx-auto reveal pt-24 mt-10">
-            <div class="bg-gradient-to-br from-[#1e1b4b] via-[#311b92] to-[#0f172a] rounded-[2rem] p-8 md:p-14 text-white shadow-[0_0_40px_rgba(88,101,242,0.2)] relative overflow-hidden border border-[#5865F2]/30">
-                
-                <!-- Discord Decorative shapes -->
-                <div class="absolute top-0 right-0 w-80 h-80 bg-[#5865F2]/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-                <div class="absolute bottom-0 left-0 w-64 h-64 bg-gold/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
-
-                <div class="relative z-10 text-center">
-                    <div class="inline-flex items-center justify-center w-24 h-24 bg-white/5 rounded-3xl backdrop-blur-md mb-8 border border-white/10 shadow-[0_0_30px_rgba(88,101,242,0.4)]">
-                        <i class="fa-brands fa-discord text-6xl text-[#5865F2]"></i>
-                    </div>
-                    <h1 class="text-4xl md:text-5xl font-black mb-6">Exclusive <span class="text-gold">Discord</span> Community</h1>
-                    <p class="text-lg text-gray-300 mb-12 max-w-2xl mx-auto leading-relaxed">ยกระดับการเทรดของคุณให้กลายเป็นมืออาชีพ รับแผนเทรดสดรายวัน Signal แม่นยำ และปรึกษาโค้ชส่วนตัวแบบ Exclusive</p>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 text-left">
-                        <div class="bg-black/20 backdrop-blur-md p-6 rounded-2xl border border-white/5 hover:border-[#5865F2]/50 transition">
-                            <div class="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center mb-4 text-red-400 text-xl"><i class="fa-solid fa-bullseye"></i></div>
-                            <h3 class="font-bold text-xl mb-2">Live Signals</h3>
-                            <p class="text-sm text-gray-400">บอกจุดเข้า จุดออก TP/SL แบบ Real-time พร้อมเหตุผล</p>
-                        </div>
-                        <div class="bg-black/20 backdrop-blur-md p-6 rounded-2xl border border-white/5 hover:border-[#5865F2]/50 transition">
-                            <div class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center mb-4 text-blue-400 text-xl"><i class="fa-solid fa-video"></i></div>
-                            <h3 class="font-bold text-xl mb-2">Live Trade</h3>
-                            <p class="text-sm text-gray-400">พาเทรดชนข่าวใหญ่ Non-farm, CPI พร้อมวิเคราะห์กราฟทุกสัปดาห์</p>
-                        </div>
-                        <div class="bg-black/20 backdrop-blur-md p-6 rounded-2xl border border-white/5 hover:border-[#5865F2]/50 transition">
-                            <div class="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center mb-4 text-green-400 text-xl"><i class="fa-solid fa-user-tie"></i></div>
-                            <h3 class="font-bold text-xl mb-2">Mentorship</h3>
-                            <p class="text-sm text-gray-400">ส่งการบ้านให้โค้ชตรวจ เพื่อปรับปรุงจุดอ่อนในระบบเทรดของคุณ</p>
-                        </div>
-                    </div>
-
-                    <div class="flex flex-col sm:flex-row gap-5 justify-center">
-                        <button class="px-8 py-4 bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-xl font-bold text-lg transition flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(88,101,242,0.5)] transform hover:scale-105">
-                            <i class="fa-brands fa-discord text-xl"></i> เข้าร่วม Discord ทันที
-                        </button>
                     </div>
                 </div>
             </div>
@@ -482,394 +431,236 @@
 
     </main>
 
-    <!-- ================= LOGIN / PROFILE MODAL ================= -->
-    <div id="loginModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
-        <div class="bg-card w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-white/10 transform scale-95 transition-transform duration-300" id="loginModalContent">
-            <div class="p-6 text-center border-b border-white/5 relative bg-gradient-to-b from-white/5 to-transparent">
-                <h2 class="text-2xl font-bold text-white"><i class="fa-solid fa-user-astronaut text-primary mr-2"></i> ตั้งค่าโปรไฟล์เทรดเดอร์</h2>
-                <button id="closeModalBtn" class="absolute top-6 right-6 text-gray-400 hover:text-red-500 transition">
-                    <i class="fa-solid fa-xmark text-xl"></i>
-                </button>
-            </div>
-            
-            <div class="p-6">
-                <!-- Avatar Selection -->
-                <p class="text-sm font-medium mb-3 text-gray-400">เลือกอวตารนำโชค:</p>
-                <div class="flex flex-wrap justify-center gap-4 mb-6">
-                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" class="avatar-option w-16 h-16 rounded-full cursor-pointer bg-blue-900/50 border-2 border-transparent transition hover:scale-110" data-seed="Felix">
-                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka" class="avatar-option w-16 h-16 rounded-full cursor-pointer bg-pink-900/50 border-2 border-transparent transition hover:scale-110" data-seed="Aneka">
-                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Leo" class="avatar-option w-16 h-16 rounded-full cursor-pointer bg-yellow-900/50 border-2 border-transparent transition hover:scale-110" data-seed="Leo">
-                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Max" class="avatar-option w-16 h-16 rounded-full cursor-pointer bg-green-900/50 border-2 border-transparent transition hover:scale-110" data-seed="Max">
-                </div>
-
-                <!-- Username Input -->
-                <div class="mb-6">
-                    <label class="block text-sm font-medium mb-2 text-gray-400">นามแฝง (Trader Name)</label>
-                    <input type="text" id="usernameInput" class="w-full px-4 py-3 bg-dark border border-gray-700 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-white placeholder-gray-600 transition" placeholder="เช่น FX_Sniper">
-                </div>
-
-                <button id="saveProfileBtn" class="w-full py-4 bg-gradient-to-r from-primary to-neonBlue hover:from-blue-600 hover:to-blue-400 text-dark font-black rounded-xl shadow-[0_0_15px_rgba(0,243,255,0.4)] transition transform hover:-translate-y-1">
-                    <i class="fa-solid fa-cloud-arrow-up mr-1"></i> บันทึกข้อมูล (Save to Cloud)
-                </button>
-            </div>
+    <!-- PDPA Consent Banner -->
+    <div id="pdpaBanner" class="fixed bottom-0 left-0 w-full bg-card border-t border-gray-800 p-4 z-[100] transform translate-y-full transition-transform duration-500 flex flex-col md:flex-row justify-between items-center gap-4 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+        <div class="text-sm text-gray-400 max-w-4xl">
+            <h4 class="font-bold text-white mb-1"><i class="fa-solid fa-cookie-bite text-gold"></i> นโยบายคุกกี้และความเป็นส่วนตัว (PDPA)</h4>
+            เว็บไซต์นี้ใช้คุกกี้เพื่อเพิ่มประสิทธิภาพและประสบการณ์ที่ดีในการใช้งานเว็บไซต์ รวมถึงเพื่อวิเคราะห์พฤติกรรมการใช้งาน ข้อมูลของคุณจะถูกเข้ารหัสและรักษาความปลอดภัยขั้นสูงสุด คุณสามารถอ่าน <a href="#" class="text-primary underline">นโยบายความเป็นส่วนตัว</a> ของเราได้
+        </div>
+        <div class="flex gap-2 flex-shrink-0">
+            <button onclick="acceptPDPA()" class="px-6 py-2 bg-primary hover:bg-blue-600 text-white font-bold rounded-lg transition text-sm">ยอมรับทั้งหมด</button>
         </div>
     </div>
 
-    <!-- Scripts (UI & Logic) -->
+    <!-- SCRIPTS -->
     <script>
-        // ================= UI & SCROLL SPY LOGIC =================
-        const sections = document.querySelectorAll("section");
-        const navLinks = document.querySelectorAll(".nav-link");
-
-        // Scroll Spy Function
+        // ================= Scroll Reveal Logic =================
         window.addEventListener("scroll", () => {
-            let current = "";
-            sections.forEach((section) => {
-                const sectionTop = section.offsetTop;
-                const sectionHeight = section.clientHeight;
-                if (scrollY >= sectionTop - 200) {
-                    current = section.getAttribute("id");
-                }
-            });
-
-            navLinks.forEach((link) => {
-                link.classList.remove("active", "text-neonBlue");
-                link.classList.remove("text-yellow-300"); // for VIP
-                if (link.dataset.target === current) {
-                    link.classList.add("active");
-                    if(current === 'vip') {
-                         link.classList.add("text-yellow-300");
-                    } else {
-                         link.classList.add("text-neonBlue");
-                    }
-                }
-            });
-
-            // Reveal Animation on scroll
             document.querySelectorAll('.reveal').forEach(el => {
-                const windowHeight = window.innerHeight;
-                const elementTop = el.getBoundingClientRect().top;
-                if (elementTop < windowHeight - 100) {
-                    el.classList.add('active');
-                }
+                if (el.getBoundingClientRect().top < window.innerHeight - 50) el.classList.add('active');
             });
         });
+        setTimeout(() => document.querySelectorAll('.reveal')[0]?.classList.add('active'), 100);
 
-        // Trigger reveal on load
-        setTimeout(() => {
-            document.querySelectorAll('.reveal')[0]?.classList.add('active');
-        }, 100);
+        // ================= Calculator Logic =================
+        function calculateLot() {
+            try {
+                const balance = parseFloat(document.getElementById('calcBalance').value);
+                const slPips = parseFloat(document.getElementById('calcSL').value);
+                const riskPercent = parseFloat(document.getElementById('calcRisk').value);
+                
+                if (!balance || !slPips || balance <= 0 || slPips <= 0) return alert('กรุณากรอกตัวเลขให้ถูกต้อง');
 
-        // Styling for ALL IN radio
-        document.querySelectorAll('input[name="riskLevel"]').forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                const labelAllIn = document.getElementById('labelAllIn');
-                if(e.target.value === "100") {
-                    labelAllIn.classList.add('all-in-active');
-                } else {
-                    labelAllIn.classList.remove('all-in-active');
-                }
-            });
-        });
+                let riskAmount = (riskPercent === 100) ? balance : balance * (riskPercent / 100);
+                let lotSize = Math.max(0.01, Math.round((riskAmount / slPips) * 100) / 100);
 
-        // Modal Logic
-        const modal = document.getElementById('loginModal');
-        const modalContent = document.getElementById('loginModalContent');
-        
-        document.getElementById('userProfileBtn').addEventListener('click', () => {
-            modal.classList.remove('hidden');
-            setTimeout(() => {
-                modal.classList.remove('opacity-0');
-                modalContent.classList.remove('scale-95');
-            }, 10);
-        });
-
-        document.getElementById('closeModalBtn').addEventListener('click', closeModal);
-
-        function closeModal() {
-            modal.classList.add('opacity-0');
-            modalContent.classList.add('scale-95');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-            }, 300);
+                document.getElementById('resultLot').innerText = lotSize.toFixed(2);
+                document.getElementById('resultRiskAmount').innerText = riskAmount.toFixed(2);
+                
+                const box = document.getElementById('calcResult');
+                box.classList.remove('hidden');
+                box.classList.remove('animate-pulse');
+                void box.offsetWidth; 
+                box.classList.add('animate-pulse');
+                setTimeout(() => box.classList.remove('animate-pulse'), 800);
+            } catch (e) { alert("Error calculating"); }
         }
 
-        // Avatar Selection UI
-        let selectedAvatarSeed = 'Guest';
-        document.querySelectorAll('.avatar-option').forEach(img => {
-            img.addEventListener('click', (e) => {
-                document.querySelectorAll('.avatar-option').forEach(el => {
-                    el.style.borderColor = 'transparent';
-                    el.style.transform = 'scale(1)';
-                });
-                e.target.style.borderColor = '#00f3ff';
-                e.target.style.transform = 'scale(1.15)';
-                selectedAvatarSeed = e.target.dataset.seed;
-            });
-        });
+        // ================= Real-time Chart & Indicators Logic =================
+        let chart, mainSeries, volumeSeries, maSeries;
+        let chartData = [];
+        let indicatorsState = { MA: false, VOL: true, ZONES: true }; // Default states
+        let zonesLines = [];
 
-        // ================= CALCULATOR LOGIC =================
-        document.getElementById('btnCalculate').addEventListener('click', () => {
-            const balance = parseFloat(document.getElementById('calcBalance').value);
-            const slPips = parseFloat(document.getElementById('calcSL').value);
-            const riskPercent = parseFloat(document.querySelector('input[name="riskLevel"]:checked').value);
-
-            if(!balance || !slPips || balance <= 0 || slPips <= 0) {
-                alert('กรุณากรอกข้อมูลเงินทุนและ SL ให้ถูกต้อง');
-                return;
-            }
-
-            let riskAmount = 0;
-            let lotSize = 0;
-
-            // สายซิ่ง All IN (100% Risk - หรือสามารถตั้งให้ Overleverage ได้)
-            if(riskPercent === 100) {
-                // ยอมเสียหมดพอร์ต
-                riskAmount = balance; 
-                // Formula: Lot = RiskAmount / (SL * PipValue) => Assuming standard lot 1 point = $1
-                lotSize = riskAmount / (slPips * 1);
-            } else {
-                // ปกติ (2%, 5%)
-                riskAmount = balance * (riskPercent / 100);
-                lotSize = riskAmount / (slPips * 1);
-            }
-
-            lotSize = Math.max(0.01, Math.round(lotSize * 100) / 100);
-
-            // Animate Numbers
-            animateValue("resultLot", 0, lotSize, 1000, true);
-            animateValue("resultRiskAmount", 0, riskAmount, 1000, false);
+        async function loadChart() {
+            const container = document.getElementById('tvchart');
             
-            const resultBox = document.getElementById('calcResult');
-            resultBox.classList.remove('hidden');
-            resultBox.classList.remove('animate-pulse');
-            void resultBox.offsetWidth; // trigger reflow
-            resultBox.classList.add('animate-pulse');
-            setTimeout(() => resultBox.classList.remove('animate-pulse'), 800);
-
-            // Save to Firebase (if authenticated)
-            saveCalculationToCloud(balance, slPips, riskPercent, lotSize);
-        });
-
-        function animateValue(id, start, end, duration, isFloat) {
-            let obj = document.getElementById(id);
-            let startTimestamp = null;
-            const step = (timestamp) => {
-                if (!startTimestamp) startTimestamp = timestamp;
-                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-                let current = progress * (end - start) + start;
-                obj.innerHTML = isFloat ? current.toFixed(2) : Math.floor(current);
-                if (progress < 1) {
-                    window.requestAnimationFrame(step);
-                }
-            };
-            window.requestAnimationFrame(step);
-        }
-
-        // ================= TRADINGVIEW CHART =================
-        let chart;
-        let candlestickSeries;
-        let fvgLines = [];
-        let demandLines = [];
-
-        function initChart() {
-            const chartContainer = document.getElementById('tvchart');
-            // Ensure container has height
-            if(!chartContainer.clientHeight) chartContainer.style.height = '400px';
-
-            chart = LightweightCharts.createChart(chartContainer, {
-                width: chartContainer.clientWidth,
-                height: chartContainer.clientHeight,
-                layout: { background: { type: 'solid', color: 'transparent' }, textColor: '#d1d4dc' },
+            chart = LightweightCharts.createChart(container, {
+                layout: { background: { type: 'solid', color: 'transparent' }, textColor: '#9ca3af' },
                 grid: { vertLines: { color: 'rgba(255, 255, 255, 0.05)' }, horzLines: { color: 'rgba(255, 255, 255, 0.05)' } },
                 crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
                 rightPriceScale: { borderColor: 'rgba(255, 255, 255, 0.1)' },
-                timeScale: { borderColor: 'rgba(255, 255, 255, 0.1)', timeVisible: true },
+                timeScale: { borderColor: 'rgba(255, 255, 255, 0.1)', rightOffset: 10 },
             });
 
-            candlestickSeries = chart.addCandlestickSeries({
+            // Main Candle Series
+            mainSeries = chart.addCandlestickSeries({
                 upColor: '#10b981', downColor: '#ef4444', borderVisible: false, wickUpColor: '#10b981', wickDownColor: '#ef4444'
             });
 
-            const data = generateMockData();
-            candlestickSeries.setData(data);
-            createTradingPlanZones(data);
+            // Fetch Real Data (Binance BTC/USDT Daily)
+            try {
+                const res = await fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=100');
+                const raw = await res.json();
+                
+                chartData = raw.map(d => {
+                    const date = new Date(d[0]);
+                    return {
+                        time: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`,
+                        open: parseFloat(d[1]), high: parseFloat(d[2]), low: parseFloat(d[3]), close: parseFloat(d[4]),
+                        volume: parseFloat(d[5])
+                    };
+                });
 
+                document.getElementById('chartLoading').style.display = 'none';
+                mainSeries.setData(chartData);
+
+                // Setup default indicators
+                setupVolume();
+                drawZones();
+
+            } catch(e) {
+                console.error("API Error", e);
+                document.getElementById('chartLoading').innerHTML = "Failed to load data";
+            }
+
+            // Resize handling
             new ResizeObserver(entries => {
-                if (entries.length === 0 || entries[0].target !== chartContainer) return;
-                const newRect = entries[0].contentRect;
-                chart.applyOptions({ height: newRect.height, width: newRect.width });
-            }).observe(chartContainer);
+                if (entries.length === 0 || entries[0].target !== container) return;
+                chart.applyOptions({ width: entries[0].contentRect.width, height: entries[0].contentRect.height });
+            }).observe(container);
         }
 
-        function generateMockData() {
-            const res = [];
-            let time = Math.floor(Date.now() / 1000) - 100 * 86400; 
-            let open = 2300.00;
-            for (let i = 0; i < 100; i++) {
-                const close = open + (Math.random() - 0.45) * 20; 
-                const high = Math.max(open, close) + Math.random() * 8;
-                const low = Math.min(open, close) - Math.random() * 8;
-                res.push({ time: time, open: open, high: high, low: low, close: close });
-                open = close; time += 86400; 
+        // Indicator Toggle Function
+        window.toggleIndicator = function(type) {
+            indicatorsState[type] = !indicatorsState[type];
+            document.getElementById('btn' + type).classList.toggle('active');
+            
+            if (type === 'MA') {
+                if(indicatorsState.MA) setupMA();
+                else if(maSeries) chart.removeSeries(maSeries);
+            } 
+            else if (type === 'VOL') {
+                if(indicatorsState.VOL) setupVolume();
+                else if(volumeSeries) chart.removeSeries(volumeSeries);
             }
-            return res;
+            else if (type === 'ZONES') {
+                zonesLines.forEach(line => chart.removeSeries(line)); // Technically Lightweight chart lines are bound to mainSeries, but for simplicity we simulate removing
+                if(indicatorsState.ZONES) drawZones();
+                else {
+                    // Remove by setting transparent
+                    zonesLines.forEach(l => l.applyOptions({color: 'rgba(0,0,0,0)', axisLabelVisible: false}));
+                }
+            }
+        };
+
+        function setupVolume() {
+            if(!chartData.length) return;
+            volumeSeries = chart.addHistogramSeries({
+                color: '#26a69a', priceFormat: { type: 'volume' },
+                priceScaleId: '', // Set as overlay
+                scaleMargins: { top: 0.8, bottom: 0 },
+            });
+            const volData = chartData.map(d => ({ 
+                time: d.time, 
+                value: d.volume, 
+                color: d.close > d.open ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)' 
+            }));
+            volumeSeries.setData(volData);
         }
 
-        function createTradingPlanZones(data) {
-            const lastPrice = data[data.length - 1].close;
+        function setupMA() {
+            if(!chartData.length) return;
+            const period = 20;
+            maSeries = chart.addLineSeries({ color: 'rgba(245, 158, 11, 1)', lineWidth: 2, title: 'SMA 20' });
+            
+            const maData = [];
+            for (let i = period - 1; i < chartData.length; i++) {
+                let sum = 0;
+                for (let j = 0; j < period; j++) sum += chartData[i - j].close;
+                maData.push({ time: chartData[i].time, value: sum / period });
+            }
+            maSeries.setData(maData);
+        }
+
+        function drawZones() {
+            if(!chartData.length) return;
+            const lastPrice = chartData[chartData.length-1].close;
+            const r = lastPrice * 0.05;
+            
             // FVG
-            fvgLines.push(candlestickSeries.createPriceLine({ price: lastPrice + 15, color: '#ef4444', lineWidth: 2, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: 'FVG (Sell)' }));
-            fvgLines.push(candlestickSeries.createPriceLine({ price: lastPrice + 10, color: '#ef4444', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Solid }));
+            let l1 = mainSeries.createPriceLine({ price: lastPrice+(r*0.6), color: '#ef4444', lineStyle: 2, title: 'FVG/Supply' });
+            let l2 = mainSeries.createPriceLine({ price: lastPrice+(r*0.3), color: '#ef4444', lineWidth: 1 });
             // Demand
-            demandLines.push(candlestickSeries.createPriceLine({ price: lastPrice - 12, color: '#10b981', lineWidth: 2, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: 'Demand (Buy)' }));
-            demandLines.push(candlestickSeries.createPriceLine({ price: lastPrice - 18, color: '#10b981', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Solid }));
+            let l3 = mainSeries.createPriceLine({ price: lastPrice-(r*0.3), color: '#10b981', lineStyle: 2, title: 'Demand' });
+            let l4 = mainSeries.createPriceLine({ price: lastPrice-(r*0.6), color: '#10b981', lineWidth: 1 });
             
-            candlestickSeries.setMarkers([
-                { time: data[data.length - 10].time, position: 'belowBar', color: '#3b82f6', shape: 'arrowUp', text: 'BOS' },
-                { time: data[data.length - 1].time, position: 'aboveBar', color: '#f59e0b', shape: 'circle', text: 'Wait...' }
-            ]);
+            zonesLines = [l1, l2, l3, l4];
         }
 
-        document.getElementById('togglePlan').addEventListener('change', (e) => {
-            const isVis = e.target.checked;
-            fvgLines[0].applyOptions({ color: isVis ? '#ef4444' : 'rgba(0,0,0,0)', axisLabelVisible: isVis });
-            fvgLines[1].applyOptions({ color: isVis ? '#ef4444' : 'rgba(0,0,0,0)' });
-            demandLines[0].applyOptions({ color: isVis ? '#10b981' : 'rgba(0,0,0,0)', axisLabelVisible: isVis });
-            demandLines[1].applyOptions({ color: isVis ? '#10b981' : 'rgba(0,0,0,0)' });
-        });
+        // ================= Stock Screener Logic =================
+        const mockStocks = [
+            { sym: 'PTT', price: 34.50, pe: 10.5, pbv: 0.9, roe: 12.5, div: 5.8 },
+            { sym: 'AOT', price: 65.25, pe: 45.2, pbv: 5.1, roe: 8.2, div: 1.5 },
+            { sym: 'CPALL', price: 55.00, pe: 28.4, pbv: 4.2, roe: 15.0, div: 2.1 },
+            { sym: 'ADVANC', price: 210.00, pe: 18.5, pbv: 7.5, roe: 35.2, div: 4.5 },
+            { sym: 'KBANK', price: 125.00, pe: 7.8, pbv: 0.6, roe: 8.5, div: 4.0 },
+            { sym: 'SCC', price: 260.00, pe: 14.2, pbv: 1.2, roe: 9.8, div: 3.5 },
+            { sym: 'TISCO', price: 98.50, pe: 11.5, pbv: 1.8, roe: 18.5, div: 8.2 }
+        ];
 
-        window.addEventListener('DOMContentLoaded', () => {
-            setTimeout(initChart, 100); // slight delay to ensure DOM is ready for rendering
-        });
-    </script>
+        window.scanStocks = function() {
+            const peMax = parseFloat(document.getElementById('peFilter').value);
+            const divMin = parseFloat(document.getElementById('divFilter').value);
+            const roeMin = parseFloat(document.getElementById('roeFilter').value);
 
-    <!-- ================= FIREBASE INTEGRATION LOGIC ================= -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, getDoc, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+            const filtered = mockStocks.filter(s => s.pe <= peMax && s.div >= divMin && s.roe >= roeMin);
+            
+            const tbody = document.getElementById('scanResultsTable');
+            document.getElementById('scanCount').innerText = filtered.length;
+            tbody.innerHTML = '';
 
-        let db, auth, currentUser, appId;
-
-        async function initFirebase() {
-            try {
-                // Setup config from environment
-                const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-                appId = typeof __app_id !== 'undefined' ? __app_id : 'fxpro-demo-app';
-
-                if (!firebaseConfig) {
-                    console.log("Firebase config not found. Running in UI-only mode.");
-                    return;
-                }
-
-                const app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-
-                // RULE 3: Auth Before Queries
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        currentUser = user;
-                        console.log("Authenticated as:", user.uid);
-                        loadUserProfile();
-                    }
-                });
-            } catch (error) {
-                console.error("Firebase Init Error:", error);
+            if(filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-gray-500 py-4">ไม่พบหุ้นที่ตรงกับเงื่อนไข</td></tr>';
+                return;
             }
-        }
 
-        // --- Save / Load Profile ---
-        async function saveProfileData() {
-            if (!currentUser || !db) return;
-            const name = document.getElementById('usernameInput').value || 'Trader_' + currentUser.uid.substring(0,4);
-            
-            const profileData = {
-                name: name,
-                avatar: window.selectedAvatarSeed || 'Guest',
-                updatedAt: new Date().toISOString()
-            };
+            filtered.forEach(s => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="font-bold text-white">${s.sym}</td>
+                        <td>${s.price.toFixed(2)}</td>
+                        <td class="${s.pe < 15 ? 'text-profit' : ''}">${s.pe}</td>
+                        <td>${s.pbv}</td>
+                        <td class="font-medium">${s.roe}%</td>
+                        <td class="text-profit font-bold">${s.div}%</td>
+                        <td><button class="text-xs bg-white/10 hover:bg-primary px-2 py-1 rounded transition">ดูข้อมูล</button></td>
+                    </tr>
+                `;
+            });
+        };
 
-            try {
-                // RULE 1: Strict Paths for Private Data
-                const userDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'data');
-                await setDoc(userDocRef, profileData);
-                
-                // Update UI
-                updateProfileUI(profileData.name, profileData.avatar);
-                window.closeModal(); // Call global function
-                
-                // Optional: Show success state on button
-                const btn = document.getElementById('saveProfileBtn');
-                const originalText = btn.innerHTML;
-                btn.innerHTML = '<i class="fa-solid fa-check"></i> บันทึกสำเร็จ!';
-                btn.classList.add('bg-green-500');
+        // ================= PDPA Logic =================
+        function checkPDPA() {
+            if(!localStorage.getItem('pdpa_accepted')) {
                 setTimeout(() => {
-                    btn.innerHTML = originalText;
-                    btn.classList.remove('bg-green-500');
+                    document.getElementById('pdpaBanner').classList.remove('translate-y-full');
                 }, 2000);
-
-            } catch (err) {
-                console.error("Error saving profile:", err);
             }
         }
+        
+        window.acceptPDPA = function() {
+            localStorage.setItem('pdpa_accepted', 'true');
+            document.getElementById('pdpaBanner').classList.add('translate-y-full');
+        };
 
-        async function loadUserProfile() {
-            if (!currentUser || !db) return;
-            try {
-                const userDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'data');
-                const docSnap = await getDoc(userDocRef);
-                
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    updateProfileUI(data.name, data.avatar);
-                    // Pre-fill input
-                    document.getElementById('usernameInput').value = data.name;
-                    window.selectedAvatarSeed = data.avatar;
-                } else {
-                    updateProfileUI('Trader (Guest)', 'Guest');
-                }
-            } catch (err) {
-                console.error("Error loading profile:", err);
-            }
-        }
+        // ================= Init Application =================
+        window.addEventListener('DOMContentLoaded', () => {
+            loadChart();
+            scanStocks(); // Initial scan load
+            checkPDPA();
+        });
 
-        function updateProfileUI(name, avatar) {
-            document.getElementById('displayUsername').innerText = name;
-            document.getElementById('displayAvatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${avatar}`;
-        }
-
-        // Expose function to global scope for the button click
-        document.getElementById('saveProfileBtn').addEventListener('click', saveProfileData);
-
-        // --- Save Calculation History (Optional Feature) ---
-        window.saveCalculationToCloud = async function(balance, sl, risk, lot) {
-            if (!currentUser || !db) return;
-            try {
-                // RULE 1: Strict Path
-                const historyRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'calcHistory');
-                await addDoc(historyRef, {
-                    balance: balance,
-                    stopLoss: sl,
-                    riskPercent: risk,
-                    lotSize: lot,
-                    timestamp: new Date().toISOString()
-                });
-                console.log("Saved calculation to history.");
-            } catch (err) {
-                console.error("Failed to save history:", err);
-            }
-        }
-
-        // Start Firebase
-        initFirebase();
     </script>
 </body>
 </html>
