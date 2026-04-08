@@ -4,10 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FXPro Live - Real-Time Crypto & Trading Platform</title>
+    <title>FXPro Ultimate - แพลตฟอร์มเทรดและวิเคราะห์หุ้นครบวงจร</title>
     
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -24,38 +24,27 @@
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: { 
-                        sans: ['Prompt', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'monospace']
-                    },
+                    fontFamily: { sans: ['Prompt', 'sans-serif'] },
                     colors: {
-                        primary: '#00f3ff',     /* Neon Cyan */
-                        primaryDark: '#0088ff',
-                        secondary: '#00ff88',   /* Neon Green (Up) */
-                        danger: '#ff0055',      /* Neon Red (Down) */
-                        dark: '#0a0e17',
-                        darker: '#05070a',
-                        card: '#111827',
-                        gold: '#F59E0B'
+                        primary: '#3b82f6',
+                        secondary: '#10b981',
+                        dark: '#0B0E14',
+                        darker: '#05070A',
+                        card: '#151A23',
+                        gold: '#F59E0B',
+                        neonBlue: '#00f3ff',
+                        neonRed: '#ff0055',
+                        profit: '#00e676',
+                        loss: '#ff1744'
                     },
                     animation: {
-                        'ticker': 'ticker 40s linear infinite',
-                        'scan': 'scan 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                        'pulse-glow': 'pulseGlow 2s ease-in-out infinite',
+                        'ticker': 'ticker 30s linear infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
                     },
                     keyframes: {
                         ticker: {
-                            '0%': { transform: 'translateX(100vw)' },
+                            '0%': { transform: 'translateX(100%)' },
                             '100%': { transform: 'translateX(-100%)' }
-                        },
-                        scan: {
-                            '0%': { transform: 'translateX(-100%) opacity-0' },
-                            '50%': { transform: 'translateX(50%)', opacity: 1 },
-                            '100%': { transform: 'translateX(200%)', opacity: 0 }
-                        },
-                        pulseGlow: {
-                            '0%, 100%': { boxShadow: '0 0 10px rgba(0, 243, 255, 0.2)' },
-                            '50%': { boxShadow: '0 0 25px rgba(0, 243, 255, 0.6)' }
                         }
                     }
                 }
@@ -65,596 +54,612 @@
 
     <style>
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #05070a; }
-        ::-webkit-scrollbar-thumb { background: #00f3ff; border-radius: 10px; }
+        ::-webkit-scrollbar-track { background: #0B0E14; }
+        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #00f3ff; }
         
-        body { background-color: #05070a; color: #f3f4f6; overflow-x: hidden; }
+        body { background-color: #05070A; color: #f3f4f6; overflow-x: hidden; }
         
-        .glass-panel {
-            background: rgba(17, 24, 39, 0.7);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(0, 243, 255, 0.1);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        .glass-nav {
+            background: rgba(11, 14, 20, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .glass-card {
+            background: rgba(21, 26, 35, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
         }
 
-        /* Chart Laser Scanner Effect */
-        .chart-container { position: relative; overflow: hidden; border-radius: 1rem; }
-        .laser-scanner {
-            position: absolute;
-            top: 0; left: 0;
-            width: 150px; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(0, 243, 255, 0.15), transparent);
-            transform: skewX(-25deg);
-            z-index: 10;
-            pointer-events: none;
-            animation: scan 5s linear infinite;
-        }
-        .laser-line {
-            position: absolute;
-            top: 0; left: 50%;
-            width: 2px; height: 100%;
-            background: #00f3ff;
-            box-shadow: 0 0 15px #00f3ff;
-        }
+        .reveal { opacity: 0; transform: translateY(20px); transition: all 0.6s ease-out; }
+        .reveal.active { opacity: 1; transform: translateY(0); }
 
-        /* Ticker Tape */
+        /* Ticker Container */
         .ticker-wrap { overflow: hidden; white-space: nowrap; box-sizing: border-box; }
-        .ticker-item { display: inline-block; padding: 0 2rem; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
-
-        .price-up { color: #00ff88; text-shadow: 0 0 8px rgba(0, 255, 136, 0.6); }
-        .price-down { color: #ff0055; text-shadow: 0 0 8px rgba(255, 0, 85, 0.6); }
+        .ticker-item { display: inline-block; padding: 0 2rem; font-family: monospace; font-size: 0.9rem; }
         
-        .nav-glow { border-bottom: 1px solid rgba(0,243,255,0.2); box-shadow: 0 4px 30px rgba(0, 243, 255, 0.05); }
-
-        /* Tables */
+        /* Table Styles */
         table { width: 100%; border-collapse: collapse; }
-        th { text-align: left; padding: 12px; color: #9ca3af; font-size: 0.8rem; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        th { text-align: left; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); color: #9ca3af; font-size: 0.85rem; font-weight: 600; }
         td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
-        tr:hover { background: rgba(0, 243, 255, 0.05); }
+        tr:hover { background: rgba(255,255,255,0.02); }
+        
+        /* Indicator Buttons */
+        .ind-btn { padding: 4px 10px; font-size: 0.75rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); transition: 0.2s; cursor: pointer; }
+        .ind-btn.active { background: #3b82f6; border-color: #3b82f6; color: white; }
     </style>
 </head>
-<body class="antialiased flex flex-col min-h-screen">
+<body class="antialiased relative">
 
-    <!-- Global Connection Status -->
-    <div id="connStatus" class="bg-yellow-500/20 text-yellow-400 text-xs text-center py-1 font-mono tracking-widest transition-colors duration-300">
-        <i class="fa-solid fa-satellite-dish animate-pulse mr-2"></i> CONNECTING TO FIREBASE & MARKETS...
+    <!-- SSL & Security Header (Visual) -->
+    <div class="bg-primary/10 border-b border-primary/20 text-center py-1 text-xs text-primary font-medium flex justify-center items-center gap-2">
+        <i class="fa-solid fa-shield-halved"></i> 256-bit SSL Encrypted & DDoS Protection Active | Low Latency Node: BKK-01
     </div>
 
-    <!-- Real-time Ticker Tape (Websocket Driven) -->
-    <div class="bg-darker border-b border-gray-800 ticker-wrap py-2 relative z-40">
-        <div id="tickerTape" class="animate-ticker inline-block">
-            <!-- Populated via JS -->
-            <span class="ticker-item text-gray-500">Loading live data streams...</span>
+    <!-- Real-time Ticker Tape -->
+    <div class="bg-darker border-b border-gray-800 ticker-wrap py-2 flex text-gray-300 relative z-40">
+        <div class="animate-ticker inline-block">
+            <span class="ticker-item"><b class="text-white">EUR/USD</b> 1.0845 <span class="text-profit"><i class="fa-solid fa-caret-up"></i> 0.12%</span></span>
+            <span class="ticker-item"><b class="text-white">GBP/USD</b> 1.2650 <span class="text-loss"><i class="fa-solid fa-caret-down"></i> 0.05%</span></span>
+            <span class="ticker-item"><b class="text-white">XAU/USD</b> 2,345.10 <span class="text-profit"><i class="fa-solid fa-caret-up"></i> 1.20%</span></span>
+            <span class="ticker-item"><b class="text-white">BTC/USDT</b> 64,200 <span class="text-profit"><i class="fa-solid fa-caret-up"></i> 2.50%</span></span>
+            <span class="ticker-item"><b class="text-white">AAPL</b> 173.50 <span class="text-loss"><i class="fa-solid fa-caret-down"></i> 0.30%</span></span>
+            <span class="ticker-item"><b class="text-white">TSLA</b> 175.22 <span class="text-profit"><i class="fa-solid fa-caret-up"></i> 4.10%</span></span>
+            <span class="ticker-item"><b class="text-white">PTT.BK</b> 34.50 <span class="text-gray-500">- 0.00%</span></span>
         </div>
     </div>
 
     <!-- Navbar -->
-    <nav class="glass-panel sticky top-0 w-full z-50 nav-glow py-3">
-        <div class="max-w-[1600px] mx-auto px-4 flex justify-between items-center">
-            <!-- Logo -->
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-dark border border-primary flex items-center justify-center animate-pulse-glow">
-                    <i class="fa-brands fa-hive text-primary text-xl"></i>
+    <nav class="glass-nav sticky top-0 w-full z-50 py-3">
+        <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="window.scrollTo(0,0)">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-neonBlue to-primary flex items-center justify-center">
+                    <i class="fa-solid fa-chart-candlestick text-dark text-xl"></i>
                 </div>
-                <span class="text-xl font-extrabold text-white tracking-widest">FX<span class="text-primary">LIVE</span></span>
+                <span class="text-xl font-extrabold text-white hidden sm:block">FX<span class="text-neonBlue">PRO</span></span>
             </div>
 
-            <!-- Profile & Login -->
+            <!-- Menu -->
+            <div class="hidden md:flex items-center gap-6 text-sm">
+                <a href="#terminal" class="hover:text-neonBlue transition"><i class="fa-solid fa-chart-line mr-1"></i> เทอร์มินัล</a>
+                <a href="#portfolio" class="hover:text-neonBlue transition"><i class="fa-solid fa-wallet mr-1"></i> พอร์ตลงทุน</a>
+                <a href="#screener" class="hover:text-neonBlue transition"><i class="fa-solid fa-filter mr-1"></i> สแกนหุ้น</a>
+                <a href="#news" class="hover:text-neonBlue transition"><i class="fa-solid fa-newspaper mr-1"></i> ข่าวสาร</a>
+            </div>
+
+            <!-- Right -->
             <div class="flex items-center gap-4">
-                <button id="openProfileBtn" class="flex items-center gap-3 bg-dark/50 border border-primary/30 hover:border-primary hover:bg-primary/10 px-4 py-2 rounded-full transition duration-300">
-                    <div class="relative">
-                        <img id="userAvatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Guest" class="w-8 h-8 rounded-full bg-gray-800">
-                        <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border border-dark"></div>
-                    </div>
-                    <div class="flex flex-col items-start hidden sm:block">
-                        <span id="userName" class="text-xs font-bold text-white leading-tight">Guest Trader</span>
-                        <span class="text-[10px] text-gray-400 font-mono">Firebase Auth</span>
-                    </div>
+                <button class="bg-primary/20 text-primary border border-primary/50 px-4 py-1.5 rounded-full text-sm font-medium hover:bg-primary hover:text-white transition">
+                    <i class="fa-solid fa-right-to-bracket mr-1"></i> ล็อกอิน
                 </button>
             </div>
         </div>
     </nav>
 
-    <!-- Main Workspace -->
-    <main class="flex-1 p-4 max-w-[1600px] mx-auto w-full flex flex-col xl:flex-row gap-6 mt-4">
+    <main class="pb-20">
         
-        <!-- LEFT: Market Selector & Portfolio -->
-        <div class="w-full xl:w-1/4 flex flex-col gap-6">
-            
-            <!-- Asset Search & Selection -->
-            <div class="glass-panel rounded-2xl p-5 border border-gray-800">
-                <h2 class="font-bold text-white mb-4 flex items-center gap-2"><i class="fa-solid fa-magnifying-glass text-primary"></i> ค้นหาตลาด (Real-Time)</h2>
+        <!-- ================= 1. TERMINAL & CHARTING ================= -->
+        <section id="terminal" class="px-4 py-6 max-w-[1400px] mx-auto reveal active">
+            <div class="flex flex-col lg:flex-row gap-4">
                 
-                <div class="relative mb-4">
-                    <input type="text" id="searchInput" placeholder="ค้นหาเหรียญ (เช่น BTC, ETH)..." class="w-full bg-darker border border-gray-700 rounded-xl px-4 py-3 pl-10 text-sm text-white focus:outline-none focus:border-primary transition">
-                    <i class="fa-solid fa-search absolute left-4 top-3.5 text-gray-500"></i>
+                <!-- Chart Section -->
+                <div class="flex-1 glass-card rounded-2xl border border-gray-800 flex flex-col overflow-hidden">
+                    <!-- Chart Header & Indicators -->
+                    <div class="p-3 bg-black/40 border-b border-gray-800 flex flex-wrap justify-between items-center gap-2">
+                        <div class="flex items-center gap-3">
+                            <span class="bg-orange-500/20 text-orange-400 px-2 py-1 rounded text-xs font-bold border border-orange-500/50">BTC/USD</span>
+                            <span class="text-xs text-green-400 animate-pulse"><i class="fa-solid fa-circle text-[8px]"></i> Real-time</span>
+                        </div>
+                        
+                        <!-- Technical Indicators Toggles -->
+                        <div class="flex gap-2">
+                            <button id="btnMA" class="ind-btn" onclick="toggleIndicator('MA')">SMA 20</button>
+                            <button id="btnVol" class="ind-btn active" onclick="toggleIndicator('VOL')">Volume</button>
+                            <button id="btnZones" class="ind-btn active" onclick="toggleIndicator('ZONES')">Smart Zones</button>
+                        </div>
+                    </div>
+
+                    <!-- Main Chart -->
+                    <div id="tvchart" class="w-full h-[450px] bg-[#131722] relative">
+                        <!-- Loading Overlay -->
+                        <div id="chartLoading" class="absolute inset-0 bg-[#131722] z-10 flex flex-col items-center justify-center text-primary">
+                            <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-2"></i>
+                            <span class="text-sm">Connecting to Exchange...</span>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="max-h-[300px] overflow-y-auto pr-2 space-y-2" id="assetList">
-                    <!-- Populated via JS -->
-                </div>
-            </div>
-
-            <!-- Action Panel: Add to Portfolio -->
-            <div class="glass-panel rounded-2xl p-5 border border-primary/20 relative overflow-hidden group">
-                <div class="absolute -inset-1 bg-gradient-to-br from-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition duration-500 rounded-2xl blur"></div>
-                <div class="relative z-10">
-                    <h2 class="font-bold text-white mb-4 flex items-center gap-2"><i class="fa-solid fa-cart-plus text-secondary"></i> สั่งซื้อเข้าพอร์ตจำลอง</h2>
+                <!-- Lot Calculator (Sidebar) -->
+                <div class="w-full lg:w-[350px] glass-card rounded-2xl p-5 border border-gray-800 h-fit">
+                    <h2 class="text-lg font-bold text-white mb-4"><i class="fa-solid fa-calculator text-primary"></i> Risk Calculator</h2>
                     
-                    <div class="bg-darker p-3 rounded-lg mb-4 border border-gray-800 text-center">
-                        <span class="text-xs text-gray-400 block mb-1">ราคาปัจจุบัน (<span id="buySymbol">BTCUSDT</span>)</span>
-                        <span class="text-2xl font-mono font-bold text-white" id="buyLivePrice">0.00</span>
-                    </div>
-
-                    <div class="space-y-3 text-sm">
+                    <div class="space-y-4 text-sm">
                         <div>
-                            <label class="block text-gray-400 mb-1">จำนวนที่ต้องการซื้อ</label>
-                            <input type="number" id="buyAmount" value="1" class="w-full bg-dark border border-gray-700 rounded-lg px-3 py-2 text-white focus:border-primary focus:outline-none">
+                            <label class="block text-gray-400 mb-1">เงินทุนพอร์ต (USD)</label>
+                            <input type="number" id="calcBalance" value="1000" class="w-full px-3 py-2 bg-dark border border-gray-700 rounded-lg text-white focus:border-primary focus:outline-none">
                         </div>
-                        <button id="btnBuy" class="w-full py-3 mt-2 bg-gradient-to-r from-green-600 to-secondary text-dark font-bold rounded-lg shadow-[0_0_15px_rgba(0,255,136,0.4)] hover:shadow-[0_0_25px_rgba(0,255,136,0.6)] transition transform hover:-translate-y-1">
-                            ยืนยันการซื้อ (Save to Cloud)
+                        <div>
+                            <label class="block text-gray-400 mb-1">Stop Loss (Points/Ticks)</label>
+                            <input type="number" id="calcSL" value="300" class="w-full px-3 py-2 bg-dark border border-gray-700 rounded-lg text-white focus:border-primary focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-gray-400 mb-1">ความเสี่ยง</label>
+                            <select id="calcRisk" class="w-full px-3 py-2 bg-dark border border-gray-700 rounded-lg text-white focus:outline-none">
+                                <option value="2">ปลอดภัย (2%)</option>
+                                <option value="5" selected>ปานกลาง (5%)</option>
+                                <option value="10">เสี่ยงสูง (10%)</option>
+                                <option value="100" class="text-red-500 font-bold">สายซิ่ง All-in (100%)</option>
+                            </select>
+                        </div>
+
+                        <button onclick="calculateLot()" class="w-full py-3 mt-2 bg-primary hover:bg-blue-600 text-white font-bold rounded-lg transition">
+                            คำนวณ Lot Size
                         </button>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- RIGHT: Live Chart & Portfolio Table -->
-        <div class="w-full xl:w-3/4 flex flex-col gap-6">
-            
-            <!-- Live Chart Container -->
-            <div class="glass-panel rounded-2xl border border-gray-800 flex flex-col chart-container h-[500px]">
-                <!-- Scanner Effect -->
-                <div class="laser-scanner"><div class="laser-line"></div></div>
-
-                <div class="p-4 bg-black/50 border-b border-gray-800 flex justify-between items-center z-20">
-                    <div class="flex items-center gap-4">
-                        <img id="chartIcon" src="https://cryptologos.cc/logos/bitcoin-btc-logo.svg" class="w-8 h-8">
-                        <div>
-                            <h2 class="text-2xl font-bold font-mono tracking-wider text-white" id="chartTitle">BTC/USDT</h2>
-                            <p class="text-xs text-primary animate-pulse flex items-center gap-1"><i class="fa-solid fa-bolt"></i> Live WebSocket Connected</p>
+                        <div id="calcResult" class="hidden mt-2 p-4 rounded-lg bg-black border border-gray-800 text-center">
+                            <p class="text-gray-400 text-xs">ปริมาณ Lot ที่แนะนำ</p>
+                            <p class="text-3xl font-black text-neonBlue" id="resultLot">0.00</p>
+                            <p class="text-red-400 text-xs mt-2">ยอดเสียสูงสุด: $<span id="resultRiskAmount">0</span></p>
                         </div>
                     </div>
-                    <div class="text-right">
-                        <span class="text-3xl font-mono font-black" id="chartPrice" class="text-white">0.00</span>
-                    </div>
                 </div>
-                
-                <div id="tvchart" class="flex-1 w-full relative z-20 bg-darker/80 backdrop-blur-sm"></div>
             </div>
+        </section>
 
-            <!-- Portfolio Cloud Data -->
-            <div class="glass-panel rounded-2xl p-5 border border-gray-800 flex-1">
-                <div class="flex justify-between items-end mb-4 border-b border-gray-800 pb-2">
-                    <h2 class="font-bold text-white text-lg flex items-center gap-2"><i class="fa-solid fa-cloud text-primary"></i> Cloud Portfolio (พอร์ตของคุณ)</h2>
-                    <div class="text-right">
-                        <span class="text-xs text-gray-400">Total Unrealized P/L</span>
-                        <div class="text-xl font-bold font-mono" id="totalPL">$0.00</div>
+        <!-- ================= 2. PORTFOLIO & WATCHLIST ================= -->
+        <section id="portfolio" class="px-4 py-10 max-w-[1400px] mx-auto reveal">
+            <h2 class="text-2xl font-bold mb-6 border-l-4 border-neonBlue pl-3">การจัดการพอร์ต & Watchlist</h2>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Portfolio Tracker -->
+                <div class="lg:col-span-2 glass-card rounded-2xl border border-gray-800 p-5 overflow-x-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-lg"><i class="fa-solid fa-briefcase text-gold"></i> พอร์ตโฟลิโอจำลอง (Mock Portfolio)</h3>
+                        <span class="text-sm font-bold text-profit">Total P/L: +$1,245.50</span>
                     </div>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <table class="min-w-full font-mono text-sm">
+                    <table class="min-w-[600px]">
                         <thead>
                             <tr>
                                 <th>สินทรัพย์ (Asset)</th>
-                                <th>จำนวน (Amt)</th>
-                                <th>ราคาที่ซื้อ (Avg Price)</th>
-                                <th>ราคาปัจจุบัน (Live)</th>
+                                <th>จำนวนถือครอง</th>
+                                <th>ราคาต้นทุน (Avg)</th>
+                                <th>ราคาปัจจุบัน (CMP)</th>
                                 <th class="text-right">กำไร/ขาดทุน (P/L)</th>
-                                <th class="text-center">Action</th>
                             </tr>
                         </thead>
-                        <tbody id="portfolioTable">
-                            <tr><td colspan="6" class="text-center py-8 text-gray-500">กรุณาล็อกอิน หรือ ซื้อสินทรัพย์เข้าพอร์ต</td></tr>
+                        <tbody>
+                            <tr>
+                                <td><b class="text-white">AAPL</b> (Apple Inc.)</td>
+                                <td>50 Shares</td>
+                                <td>$160.00</td>
+                                <td>$173.50</td>
+                                <td class="text-right text-profit font-bold">+$675.00 (+8.4%)</td>
+                            </tr>
+                            <tr>
+                                <td><b class="text-white">TSLA</b> (Tesla)</td>
+                                <td>20 Shares</td>
+                                <td>$190.00</td>
+                                <td>$175.22</td>
+                                <td class="text-right text-loss font-bold">-$295.60 (-7.7%)</td>
+                            </tr>
+                            <tr>
+                                <td><b class="text-white">BTC/USDT</b> (Bitcoin)</td>
+                                <td>0.05 BTC</td>
+                                <td>$45,000</td>
+                                <td>$64,200</td>
+                                <td class="text-right text-profit font-bold">+$960.00 (+42.6%)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Watchlist -->
+                <div class="glass-card rounded-2xl border border-gray-800 p-5">
+                    <h3 class="font-bold text-lg mb-4"><i class="fa-solid fa-star text-yellow-400"></i> Watchlist</h3>
+                    <ul class="space-y-3">
+                        <li class="flex justify-between items-center bg-black/30 p-3 rounded-lg border border-white/5 hover:border-primary transition cursor-pointer">
+                            <div><div class="font-bold">NVDA</div><div class="text-xs text-gray-500">Nvidia Corp.</div></div>
+                            <div class="text-right"><div class="font-medium">$850.20</div><div class="text-xs text-profit">+2.4%</div></div>
+                        </li>
+                        <li class="flex justify-between items-center bg-black/30 p-3 rounded-lg border border-white/5 hover:border-primary transition cursor-pointer">
+                            <div><div class="font-bold">PTT.BK</div><div class="text-xs text-gray-500">ปตท.</div></div>
+                            <div class="text-right"><div class="font-medium">฿34.50</div><div class="text-xs text-gray-400">0.0%</div></div>
+                        </li>
+                        <li class="flex justify-between items-center bg-black/30 p-3 rounded-lg border border-white/5 hover:border-primary transition cursor-pointer">
+                            <div><div class="font-bold">ETH/USDT</div><div class="text-xs text-gray-500">Ethereum</div></div>
+                            <div class="text-right"><div class="font-medium">$3,450.00</div><div class="text-xs text-loss">-1.2%</div></div>
+                        </li>
+                    </ul>
+                    <button class="w-full mt-4 py-2 border border-dashed border-gray-600 rounded-lg text-gray-400 hover:text-white hover:border-white transition text-sm">
+                        + เพิ่มสินทรัพย์
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= 3. STOCK SCREENER & FUNDAMENTALS ================= -->
+        <section id="screener" class="px-4 py-10 max-w-[1400px] mx-auto reveal">
+            <h2 class="text-2xl font-bold mb-6 border-l-4 border-neonBlue pl-3">สแกนหุ้น & ข้อมูลพื้นฐาน (Fundamentals)</h2>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                
+                <!-- Screener Controls -->
+                <div class="lg:col-span-1 glass-card rounded-2xl border border-gray-800 p-5 h-fit">
+                    <h3 class="font-bold mb-4"><i class="fa-solid fa-filter text-primary"></i> ตั้งค่าเงื่อนไขกรองหุ้น</h3>
+                    
+                    <div class="space-y-4 text-sm">
+                        <div>
+                            <label class="block text-gray-400 mb-1">P/E Ratio (น้อยกว่า)</label>
+                            <input type="range" id="peFilter" min="5" max="50" value="20" class="w-full accent-primary" oninput="document.getElementById('peVal').innerText=this.value">
+                            <div class="text-right text-xs text-neonBlue">P/E < <span id="peVal">20</span></div>
+                        </div>
+                        <div>
+                            <label class="block text-gray-400 mb-1">Dividend Yield (มากกว่า %)</label>
+                            <input type="range" id="divFilter" min="0" max="10" value="3" step="0.5" class="w-full accent-primary" oninput="document.getElementById('divVal').innerText=this.value">
+                            <div class="text-right text-xs text-neonBlue">Div > <span id="divVal">3</span>%</div>
+                        </div>
+                        <div>
+                            <label class="block text-gray-400 mb-1">ROE (มากกว่า %)</label>
+                            <input type="number" id="roeFilter" value="10" class="w-full px-2 py-1 bg-dark border border-gray-700 rounded text-white">
+                        </div>
+                        <button onclick="scanStocks()" class="w-full py-2 bg-gradient-to-r from-primary to-blue-600 text-white rounded font-bold shadow-lg shadow-blue-500/20">
+                            สแกนทันที
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Screener Results -->
+                <div class="lg:col-span-3 glass-card rounded-2xl border border-gray-800 p-5 overflow-x-auto">
+                    <h3 class="font-bold mb-4">ผลการสแกน (Found: <span id="scanCount" class="text-primary">0</span>)</h3>
+                    <table class="min-w-[600px]">
+                        <thead>
+                            <tr>
+                                <th>หุ้น (Symbol)</th>
+                                <th>ราคา (Price)</th>
+                                <th>P/E</th>
+                                <th>P/BV</th>
+                                <th>ROE (%)</th>
+                                <th>Dividend (%)</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scanResultsTable">
+                            <!-- JS will inject rows here -->
                         </tbody>
                     </table>
                 </div>
             </div>
-        </div>
+
+            <!-- Company Profile (Fundamental Snapshot) -->
+            <div class="mt-6 glass-card rounded-2xl border border-gray-800 p-6">
+                <div class="flex justify-between items-start mb-6 border-b border-gray-800 pb-4">
+                    <div>
+                        <h3 class="text-2xl font-bold text-white">Apple Inc. (AAPL)</h3>
+                        <p class="text-sm text-gray-400">Technology | Consumer Electronics</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-2xl font-black text-white">$173.50</div>
+                        <div class="text-sm text-profit">+0.45 (+0.26%)</div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-sm">
+                    <div><span class="block text-gray-500">Market Cap</span><span class="font-bold">2.68 Trillion</span></div>
+                    <div><span class="block text-gray-500">P/E Ratio</span><span class="font-bold text-yellow-400">26.50</span></div>
+                    <div><span class="block text-gray-500">EPS (TTM)</span><span class="font-bold">6.42</span></div>
+                    <div><span class="block text-gray-500">Dividend Yield</span><span class="font-bold">0.55%</span></div>
+                    <div><span class="block text-gray-500">ROE</span><span class="font-bold text-profit">156.40%</span></div>
+                    <div><span class="block text-gray-500">P/BV</span><span class="font-bold">39.12</span></div>
+                    <div><span class="block text-gray-500">52W High</span><span class="font-bold">199.62</span></div>
+                    <div><span class="block text-gray-500">52W Low</span><span class="font-bold">155.98</span></div>
+                </div>
+                <div class="mt-6 pt-4 border-t border-gray-800 text-sm text-gray-400">
+                    <p><b>Company Profile:</b> Apple Inc. designs, manufactures, and markets smartphones, personal computers, tablets, wearables, and accessories worldwide. It also sells various related services.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= 4. NEWS & ECONOMIC CALENDAR ================= -->
+        <section id="news" class="px-4 py-10 max-w-[1400px] mx-auto reveal">
+            <h2 class="text-2xl font-bold mb-6 border-l-4 border-neonBlue pl-3">ข่าวสาร & ปฏิทินเศรษฐกิจ (News & Calendar)</h2>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- News Feed -->
+                <div class="glass-card rounded-2xl border border-gray-800 p-5">
+                    <h3 class="font-bold text-lg mb-4"><i class="fa-regular fa-newspaper text-primary"></i> Market News Feed</h3>
+                    <div class="space-y-4">
+                        <div class="flex gap-4 group cursor-pointer border-b border-gray-800 pb-4">
+                            <div class="w-20 h-20 bg-gray-800 rounded-lg flex-shrink-0 bg-[url('https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=150&q=80')] bg-cover"></div>
+                            <div>
+                                <h4 class="font-bold group-hover:text-primary transition text-sm">FED ประกาศคงอัตราดอกเบี้ย ส่งผลตลาดหุ้นพุ่งกระฉูด</h4>
+                                <p class="text-xs text-gray-400 mt-1 line-clamp-2">ธนาคารกลางสหรัฐประกาศคงอัตราดอกเบี้ยที่ระดับ 5.25-5.50% ตามคาด พร้อมส่งสัญญาณอาจลดดอกเบี้ย 3 ครั้งในปีนี้...</p>
+                                <span class="text-[10px] text-gray-500 mt-2 block"><i class="fa-regular fa-clock"></i> 2 ชั่วโมงที่แล้ว</span>
+                            </div>
+                        </div>
+                        <div class="flex gap-4 group cursor-pointer border-b border-gray-800 pb-4">
+                            <div class="w-20 h-20 bg-gray-800 rounded-lg flex-shrink-0 bg-[url('https://images.unsplash.com/photo-1621504450181-5d356f61d307?auto=format&fit=crop&w=150&q=80')] bg-cover"></div>
+                            <div>
+                                <h4 class="font-bold group-hover:text-primary transition text-sm">Bitcoin ทะลุ $64K กองทุน ETF กว้านซื้อต่อเนื่อง</h4>
+                                <p class="text-xs text-gray-400 mt-1 line-clamp-2">แรงซื้อจากสถาบันการเงินผ่าน Spot Bitcoin ETF ดันราคาเหรียญพี่ใหญ่ทำจุดสูงสุดใหม่ในรอบหลายเดือน...</p>
+                                <span class="text-[10px] text-gray-500 mt-2 block"><i class="fa-regular fa-clock"></i> 5 ชั่วโมงที่แล้ว</span>
+                            </div>
+                        </div>
+                        <div class="flex gap-4 group cursor-pointer">
+                            <div class="w-20 h-20 bg-gray-800 rounded-lg flex-shrink-0 bg-[url('https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&w=150&q=80')] bg-cover"></div>
+                            <div>
+                                <h4 class="font-bold group-hover:text-primary transition text-sm">Apple เปิดตัว AI ใหม่ ผสานเข้ากับ iOS 18</h4>
+                                <p class="text-xs text-gray-400 mt-1 line-clamp-2">หุ้น AAPL ตอบรับเชิงบวกหลังนักวิเคราะห์มองว่าการขยับตัวเข้าสู่ตลาด Generative AI จะช่วยเพิ่มยอดขาย iPhone...</p>
+                                <span class="text-[10px] text-gray-500 mt-2 block"><i class="fa-regular fa-clock"></i> 1 วันที่แล้ว</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Economic Calendar -->
+                <div class="glass-card rounded-2xl border border-gray-800 p-5">
+                    <h3 class="font-bold text-lg mb-4"><i class="fa-regular fa-calendar text-gold"></i> Economic Calendar</h3>
+                    <div class="space-y-3">
+                        <div class="bg-black/40 p-3 rounded-xl border-l-4 border-red-500 flex justify-between items-center">
+                            <div>
+                                <div class="text-xs text-gray-400 mb-1">วันนี้ 19:30 <img src="https://flagcdn.com/w20/us.png" class="inline w-4 ml-1"></div>
+                                <div class="font-bold text-sm">ดัชนีราคาผู้บริโภค (CPI) m/m</div>
+                                <div class="text-xs text-gray-500 mt-1">คาดการณ์: 0.3% | ครั้งก่อน: 0.4%</div>
+                            </div>
+                            <div class="text-red-500 text-xs"><i class="fa-solid fa-fire"></i><i class="fa-solid fa-fire"></i><i class="fa-solid fa-fire"></i></div>
+                        </div>
+                        <div class="bg-black/40 p-3 rounded-xl border-l-4 border-red-500 flex justify-between items-center">
+                            <div>
+                                <div class="text-xs text-gray-400 mb-1">พฤหัส 19:30 <img src="https://flagcdn.com/w20/us.png" class="inline w-4 ml-1"></div>
+                                <div class="font-bold text-sm">จำนวนผู้ขอรับสวัสดิการว่างงาน (Initial Jobless Claims)</div>
+                                <div class="text-xs text-gray-500 mt-1">คาดการณ์: 215K | ครั้งก่อน: 210K</div>
+                            </div>
+                            <div class="text-red-500 text-xs"><i class="fa-solid fa-fire"></i><i class="fa-solid fa-fire"></i><i class="fa-solid fa-fire"></i></div>
+                        </div>
+                        <div class="bg-black/40 p-3 rounded-xl border-l-4 border-yellow-500 flex justify-between items-center">
+                            <div>
+                                <div class="text-xs text-gray-400 mb-1">ศุกร์ 09:00 <img src="https://flagcdn.com/w20/cn.png" class="inline w-4 ml-1"></div>
+                                <div class="font-bold text-sm">GDP จีน (y/y)</div>
+                                <div class="text-xs text-gray-500 mt-1">คาดการณ์: 5.0% | ครั้งก่อน: 5.2%</div>
+                            </div>
+                            <div class="text-yellow-500 text-xs"><i class="fa-solid fa-fire"></i><i class="fa-solid fa-fire"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
     </main>
 
-    <!-- Profile Setup Modal -->
-    <div id="profileModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
-        <div class="glass-panel w-full max-w-md rounded-2xl border border-primary/50 p-6 relative shadow-[0_0_50px_rgba(0,243,255,0.2)]">
-            <button id="closeProfileModal" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
-            <h2 class="text-2xl font-bold text-white mb-6 text-center border-b border-gray-800 pb-4"><i class="fa-solid fa-user-astronaut text-primary mr-2"></i> ตั้งค่าโปรไฟล์</h2>
-            
-            <p class="text-xs text-gray-400 mb-3 text-center">อวตารนำโชคของคุณ</p>
-            <div class="flex flex-wrap justify-center gap-4 mb-6">
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Alpha" class="avatar-opt w-14 h-14 rounded-full cursor-pointer border-2 border-transparent hover:border-primary transition" data-seed="Alpha">
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Beta" class="avatar-opt w-14 h-14 rounded-full cursor-pointer border-2 border-transparent hover:border-primary transition" data-seed="Beta">
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Gamma" class="avatar-opt w-14 h-14 rounded-full cursor-pointer border-2 border-transparent hover:border-primary transition" data-seed="Gamma">
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Delta" class="avatar-opt w-14 h-14 rounded-full cursor-pointer border-2 border-transparent hover:border-primary transition" data-seed="Delta">
-            </div>
-
-            <div class="mb-6">
-                <label class="block text-sm text-gray-400 mb-2">นามแฝงในวงการเทรด</label>
-                <input type="text" id="inputUsername" class="w-full px-4 py-3 bg-dark border border-gray-700 rounded-xl text-white focus:border-primary focus:outline-none transition" placeholder="เช่น CryptoKing">
-            </div>
-
-            <button id="btnSaveProfile" class="w-full py-4 bg-primary hover:bg-primaryDark text-dark font-black rounded-xl transition flex items-center justify-center gap-2">
-                <i class="fa-solid fa-cloud-arrow-up"></i> บันทึกลง Cloud Database
-            </button>
+    <!-- PDPA Consent Banner -->
+    <div id="pdpaBanner" class="fixed bottom-0 left-0 w-full bg-card border-t border-gray-800 p-4 z-[100] transform translate-y-full transition-transform duration-500 flex flex-col md:flex-row justify-between items-center gap-4 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+        <div class="text-sm text-gray-400 max-w-4xl">
+            <h4 class="font-bold text-white mb-1"><i class="fa-solid fa-cookie-bite text-gold"></i> นโยบายคุกกี้และความเป็นส่วนตัว (PDPA)</h4>
+            เว็บไซต์นี้ใช้คุกกี้เพื่อเพิ่มประสิทธิภาพและประสบการณ์ที่ดีในการใช้งานเว็บไซต์ รวมถึงเพื่อวิเคราะห์พฤติกรรมการใช้งาน ข้อมูลของคุณจะถูกเข้ารหัสและรักษาความปลอดภัยขั้นสูงสุด คุณสามารถอ่าน <a href="#" class="text-primary underline">นโยบายความเป็นส่วนตัว</a> ของเราได้
+        </div>
+        <div class="flex gap-2 flex-shrink-0">
+            <button onclick="acceptPDPA()" class="px-6 py-2 bg-primary hover:bg-blue-600 text-white font-bold rounded-lg transition text-sm">ยอมรับทั้งหมด</button>
         </div>
     </div>
 
-    <!-- ================= JAVASCRIPT LOGIC ================= -->
-    <script type="module">
-        // --- 1. Firebase Setup (Strict Rules Followed) ---
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, addDoc, onSnapshot, query, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <!-- SCRIPTS -->
+    <script>
+        // ================= Scroll Reveal Logic =================
+        window.addEventListener("scroll", () => {
+            document.querySelectorAll('.reveal').forEach(el => {
+                if (el.getBoundingClientRect().top < window.innerHeight - 50) el.classList.add('active');
+            });
+        });
+        setTimeout(() => document.querySelectorAll('.reveal')[0]?.classList.add('active'), 100);
 
-        let db, auth, currentUser, appId;
-        const connStatus = document.getElementById('connStatus');
-
-        async function initFirebase() {
+        // ================= Calculator Logic =================
+        function calculateLot() {
             try {
-                const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-                appId = typeof __app_id !== 'undefined' ? __app_id : 'fxpro-live-app';
-
-                if (!firebaseConfig) {
-                    connStatus.innerHTML = "<i class='fa-solid fa-triangle-exclamation'></i> UI Mode Only (No Firebase Config)";
-                    connStatus.className = "bg-red-500/20 text-red-400 text-xs text-center py-1 font-mono tracking-widest";
-                    initMarketData(); // Start market data even without DB
-                    return;
-                }
-
-                const app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-
-                // RULE 3: Auth Before Queries
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        currentUser = user;
-                        connStatus.innerHTML = `<i class='fa-solid fa-shield-check'></i> FIREBASE SECURE CONNECTED | UID: ${user.uid.substring(0,8)}...`;
-                        connStatus.className = "bg-green-500/20 text-green-400 text-xs text-center py-1 font-mono tracking-widest";
-                        
-                        loadUserProfile();
-                        listenToPortfolio(); // Start listening to user's database
-                        initMarketData();    // Start market websockets
-                    }
-                });
-            } catch (error) {
-                console.error("Firebase Error:", error);
-            }
-        }
-
-        // --- 2. Market Data & WebSockets (Binance API) ---
-        const COINS = [
-            { sym: 'BTCUSDT', name: 'Bitcoin', icon: 'bitcoin-btc-logo' },
-            { sym: 'ETHUSDT', name: 'Ethereum', icon: 'ethereum-eth-logo' },
-            { sym: 'BNBUSDT', name: 'Binance Coin', icon: 'bnb-bnb-logo' },
-            { sym: 'SOLUSDT', name: 'Solana', icon: 'solana-sol-logo' },
-            { sym: 'XRPUSDT', name: 'Ripple', icon: 'xrp-xrp-logo' },
-            { sym: 'ADAUSDT', name: 'Cardano', icon: 'cardano-ada-logo' }
-        ];
-
-        let activeSymbol = 'BTCUSDT';
-        let livePrices = {}; // Store all live prices for portfolio calculation
-        let chart, candlestickSeries;
-        let wsTicker, wsChart;
-
-        function initMarketData() {
-            renderAssetList();
-            initChart();
-            connectGlobalTicker();
-            connectChartWS(activeSymbol);
-        }
-
-        // Render Sidebar List
-        function renderAssetList(filter = '') {
-            const list = document.getElementById('assetList');
-            list.innerHTML = '';
-            
-            COINS.filter(c => c.sym.toLowerCase().includes(filter.toLowerCase()) || c.name.toLowerCase().includes(filter.toLowerCase()))
-                 .forEach(coin => {
+                const balance = parseFloat(document.getElementById('calcBalance').value);
+                const slPips = parseFloat(document.getElementById('calcSL').value);
+                const riskPercent = parseFloat(document.getElementById('calcRisk').value);
                 
-                const div = document.createElement('div');
-                div.className = `p-3 rounded-xl border border-gray-800 cursor-pointer transition flex justify-between items-center ${activeSymbol === coin.sym ? 'bg-primary/20 border-primary' : 'bg-darker hover:border-gray-500'}`;
-                div.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <img src="https://cryptologos.cc/logos/${coin.icon}.svg" class="w-6 h-6">
-                        <div>
-                            <div class="font-bold font-mono text-sm text-white">${coin.sym}</div>
-                            <div class="text-[10px] text-gray-500">${coin.name}</div>
-                        </div>
-                    </div>
-                    <div class="text-right">
-                        <div class="font-mono text-sm font-bold price-update" id="listPrice-${coin.sym}">...</div>
-                    </div>
-                `;
-                div.onclick = () => selectAsset(coin.sym, coin.icon);
-                list.appendChild(div);
-            });
-        }
+                if (!balance || !slPips || balance <= 0 || slPips <= 0) return alert('กรุณากรอกตัวเลขให้ถูกต้อง');
 
-        document.getElementById('searchInput').addEventListener('input', (e) => renderAssetList(e.target.value));
+                let riskAmount = (riskPercent === 100) ? balance : balance * (riskPercent / 100);
+                let lotSize = Math.max(0.01, Math.round((riskAmount / slPips) * 100) / 100);
 
-        function selectAsset(sym, iconId) {
-            activeSymbol = sym;
-            renderAssetList(document.getElementById('searchInput').value); // Update selection highlight
-            
-            // Update UI Headers
-            document.getElementById('chartTitle').innerText = sym;
-            document.getElementById('buySymbol').innerText = sym;
-            document.getElementById('chartIcon').src = `https://cryptologos.cc/logos/${iconId}.svg`;
-            
-            // Switch Websockets & Chart
-            fetchChartHistory(sym);
-            connectChartWS(sym);
-        }
-
-        // Global Ticker WebSocket (For Tape, Sidebar, and Portfolio pricing)
-        function connectGlobalTicker() {
-            if(wsTicker) wsTicker.close();
-            const streams = COINS.map(c => c.sym.toLowerCase() + '@ticker').join('/');
-            wsTicker = new WebSocket(`wss://stream.binance.com:9443/ws/${streams}`);
-            
-            wsTicker.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                const sym = data.s;
-                const price = parseFloat(data.c);
-                const pctChange = parseFloat(data.P);
+                document.getElementById('resultLot').innerText = lotSize.toFixed(2);
+                document.getElementById('resultRiskAmount').innerText = riskAmount.toFixed(2);
                 
-                livePrices[sym] = price; // Store globally
-
-                // Update Sidebar List
-                const listEl = document.getElementById(`listPrice-${sym}`);
-                if(listEl) {
-                    listEl.innerText = price.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:4});
-                    listEl.className = `font-mono text-sm font-bold ${pctChange >= 0 ? 'text-secondary' : 'text-danger'}`;
-                }
-
-                // Update Buy Panel if active
-                if(sym === activeSymbol) {
-                    document.getElementById('buyLivePrice').innerText = price.toLocaleString('en-US', {minimumFractionDigits:2});
-                    const chartPrice = document.getElementById('chartPrice');
-                    chartPrice.innerText = price.toLocaleString('en-US', {minimumFractionDigits:2});
-                    chartPrice.className = `text-3xl font-mono font-black ${pctChange >= 0 ? 'text-secondary' : 'text-danger'}`;
-                }
-
-                updatePortfolioUI(); // Recalculate Portfolio P/L
-                updateTickerTape();  // Update Top Bar
-            };
+                const box = document.getElementById('calcResult');
+                box.classList.remove('hidden');
+                box.classList.remove('animate-pulse');
+                void box.offsetWidth; 
+                box.classList.add('animate-pulse');
+                setTimeout(() => box.classList.remove('animate-pulse'), 800);
+            } catch (e) { alert("Error calculating"); }
         }
 
-        function updateTickerTape() {
-            const tape = document.getElementById('tickerTape');
-            let html = '';
-            COINS.forEach(c => {
-                const p = livePrices[c.sym] || 0;
-                html += `<span class="ticker-item"><b class="text-white">${c.sym}</b> <span class="text-primary">${p.toLocaleString()}</span></span>`;
-            });
-            // Duplicate for smooth infinite scroll
-            tape.innerHTML = html + html; 
-        }
+        // ================= Real-time Chart & Indicators Logic =================
+        let chart, mainSeries, volumeSeries, maSeries;
+        let chartData = [];
+        let indicatorsState = { MA: false, VOL: true, ZONES: true }; // Default states
+        let zonesLines = [];
 
-        // --- 3. TradingView Chart Logic ---
-        function initChart() {
+        async function loadChart() {
             const container = document.getElementById('tvchart');
+            
             chart = LightweightCharts.createChart(container, {
                 layout: { background: { type: 'solid', color: 'transparent' }, textColor: '#9ca3af' },
-                grid: { vertLines: { color: 'rgba(0, 243, 255, 0.05)' }, horzLines: { color: 'rgba(0, 243, 255, 0.05)' } },
+                grid: { vertLines: { color: 'rgba(255, 255, 255, 0.05)' }, horzLines: { color: 'rgba(255, 255, 255, 0.05)' } },
                 crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
                 rightPriceScale: { borderColor: 'rgba(255, 255, 255, 0.1)' },
-                timeScale: { borderColor: 'rgba(255, 255, 255, 0.1)', timeVisible: true },
+                timeScale: { borderColor: 'rgba(255, 255, 255, 0.1)', rightOffset: 10 },
             });
 
-            // Neon Candlestick styling
-            candlestickSeries = chart.addCandlestickSeries({
-                upColor: '#00ff88',       // Neon Green
-                downColor: '#ff0055',     // Neon Red
-                borderVisible: false,
-                wickUpColor: '#00ff88',
-                wickDownColor: '#ff0055'
+            // Main Candle Series
+            mainSeries = chart.addCandlestickSeries({
+                upColor: '#10b981', downColor: '#ef4444', borderVisible: false, wickUpColor: '#10b981', wickDownColor: '#ef4444'
             });
 
-            // Handle Resize
+            // Fetch Real Data (Binance BTC/USDT Daily)
+            try {
+                const res = await fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=100');
+                const raw = await res.json();
+                
+                chartData = raw.map(d => {
+                    const date = new Date(d[0]);
+                    return {
+                        time: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`,
+                        open: parseFloat(d[1]), high: parseFloat(d[2]), low: parseFloat(d[3]), close: parseFloat(d[4]),
+                        volume: parseFloat(d[5])
+                    };
+                });
+
+                document.getElementById('chartLoading').style.display = 'none';
+                mainSeries.setData(chartData);
+
+                // Setup default indicators
+                setupVolume();
+                drawZones();
+
+            } catch(e) {
+                console.error("API Error", e);
+                document.getElementById('chartLoading').innerHTML = "Failed to load data";
+            }
+
+            // Resize handling
             new ResizeObserver(entries => {
                 if (entries.length === 0 || entries[0].target !== container) return;
                 chart.applyOptions({ width: entries[0].contentRect.width, height: entries[0].contentRect.height });
             }).observe(container);
-
-            fetchChartHistory(activeSymbol);
         }
 
-        async function fetchChartHistory(symbol) {
-            try {
-                // Fetch 1m candles
-                const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol.toUpperCase()}&interval=1m&limit=100`);
-                const raw = await res.json();
-                const data = raw.map(d => ({
-                    time: d[0] / 1000, // Unix timestamp in seconds
-                    open: parseFloat(d[1]), high: parseFloat(d[2]), low: parseFloat(d[3]), close: parseFloat(d[4])
-                }));
-                candlestickSeries.setData(data);
-            } catch (err) { console.error("Chart history error:", err); }
-        }
-
-        function connectChartWS(symbol) {
-            if(wsChart) wsChart.close();
-            wsChart = new WebSocket(`wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@kline_1m`);
+        // Indicator Toggle Function
+        window.toggleIndicator = function(type) {
+            indicatorsState[type] = !indicatorsState[type];
+            document.getElementById('btn' + type).classList.toggle('active');
             
-            wsChart.onmessage = (event) => {
-                const message = JSON.parse(event.data);
-                const kline = message.k;
-                // Live update the last candle
-                candlestickSeries.update({
-                    time: kline.t / 1000,
-                    open: parseFloat(kline.o),
-                    high: parseFloat(kline.h),
-                    low: parseFloat(kline.l),
-                    close: parseFloat(kline.c)
-                });
-            };
-        }
-
-        // --- 4. Profile Management (Firebase) ---
-        let selectedAvatar = 'Guest';
-
-        const modal = document.getElementById('profileModal');
-        document.getElementById('openProfileBtn').onclick = () => modal.classList.remove('hidden');
-        document.getElementById('closeProfileModal').onclick = () => modal.classList.add('hidden');
-
-        // Avatar Selection
-        document.querySelectorAll('.avatar-opt').forEach(img => {
-            img.onclick = (e) => {
-                document.querySelectorAll('.avatar-opt').forEach(el => el.classList.remove('border-primary'));
-                e.target.classList.add('border-primary');
-                selectedAvatar = e.target.dataset.seed;
+            if (type === 'MA') {
+                if(indicatorsState.MA) setupMA();
+                else if(maSeries) chart.removeSeries(maSeries);
+            } 
+            else if (type === 'VOL') {
+                if(indicatorsState.VOL) setupVolume();
+                else if(volumeSeries) chart.removeSeries(volumeSeries);
             }
-        });
-
-        // Save Profile to Firestore
-        document.getElementById('btnSaveProfile').onclick = async () => {
-            if(!currentUser) return alert('No authenticated user.');
-            const name = document.getElementById('inputUsername').value || 'Trader';
-            
-            try {
-                // RULE 1: Strict Path
-                const profileRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'info');
-                await setDoc(profileRef, { name: name, avatar: selectedAvatar });
-                
-                updateProfileUI(name, selectedAvatar);
-                modal.classList.add('hidden');
-            } catch (e) { console.error("Profile save error:", e); }
-        };
-
-        async function loadUserProfile() {
-            if(!currentUser) return;
-            try {
-                const profileRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'info');
-                const docSnap = await getDoc(profileRef);
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    updateProfileUI(data.name, data.avatar);
-                    document.getElementById('inputUsername').value = data.name;
+            else if (type === 'ZONES') {
+                zonesLines.forEach(line => chart.removeSeries(line)); // Technically Lightweight chart lines are bound to mainSeries, but for simplicity we simulate removing
+                if(indicatorsState.ZONES) drawZones();
+                else {
+                    // Remove by setting transparent
+                    zonesLines.forEach(l => l.applyOptions({color: 'rgba(0,0,0,0)', axisLabelVisible: false}));
                 }
-            } catch (e) { console.error("Load profile error:", e); }
-        }
-
-        function updateProfileUI(name, avatar) {
-            document.getElementById('userName').innerText = name;
-            document.getElementById('userAvatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${avatar}`;
-        }
-
-        // --- 5. Portfolio Cloud Logic (Firebase) ---
-        let portfolioData = [];
-
-        // Buy Action
-        document.getElementById('btnBuy').onclick = async () => {
-            if(!currentUser) return alert('กรุณารอระบบเชื่อมต่อ Database ก่อน');
-            
-            const amount = parseFloat(document.getElementById('buyAmount').value);
-            const price = livePrices[activeSymbol];
-            if(!amount || amount <= 0 || !price) return alert('ระบุจำนวนให้ถูกต้อง');
-
-            try {
-                const btn = document.getElementById('btnBuy');
-                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
-                
-                // RULE 1: Strict Path
-                const portRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'portfolio');
-                await addDoc(portRef, {
-                    symbol: activeSymbol,
-                    buyPrice: price,
-                    amount: amount,
-                    timestamp: new Date().toISOString()
-                });
-
-                setTimeout(() => {
-                    btn.innerHTML = 'บันทึกสำเร็จ!';
-                    setTimeout(() => btn.innerHTML = 'ยืนยันการซื้อ (Save to Cloud)', 1500);
-                }, 500);
-
-            } catch (e) { console.error("Buy error:", e); alert("Failed to save to cloud"); }
+            }
         };
 
-        // Listen to Firestore changes real-time
-        function listenToPortfolio() {
-            if(!currentUser) return;
-            const portRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'portfolio');
-            
-            // RULE 2: Simple query, no complex order by
-            const q = query(portRef);
-            
-            onSnapshot(q, (snapshot) => {
-                portfolioData = [];
-                snapshot.forEach(doc => {
-                    portfolioData.push({ id: doc.id, ...doc.data() });
-                });
-                updatePortfolioUI();
-            }, (error) => {
-                console.error("Snapshot error:", error);
+        function setupVolume() {
+            if(!chartData.length) return;
+            volumeSeries = chart.addHistogramSeries({
+                color: '#26a69a', priceFormat: { type: 'volume' },
+                priceScaleId: '', // Set as overlay
+                scaleMargins: { top: 0.8, bottom: 0 },
             });
+            const volData = chartData.map(d => ({ 
+                time: d.time, 
+                value: d.volume, 
+                color: d.close > d.open ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)' 
+            }));
+            volumeSeries.setData(volData);
         }
 
-        // Render Portfolio Table and Calculate Live P/L
-        window.deletePortfolioItem = async function(docId) {
-            if(!currentUser) return;
-            try {
-                await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'portfolio', docId));
-            } catch(e) { console.error(e); }
+        function setupMA() {
+            if(!chartData.length) return;
+            const period = 20;
+            maSeries = chart.addLineSeries({ color: 'rgba(245, 158, 11, 1)', lineWidth: 2, title: 'SMA 20' });
+            
+            const maData = [];
+            for (let i = period - 1; i < chartData.length; i++) {
+                let sum = 0;
+                for (let j = 0; j < period; j++) sum += chartData[i - j].close;
+                maData.push({ time: chartData[i].time, value: sum / period });
+            }
+            maSeries.setData(maData);
         }
 
-        function updatePortfolioUI() {
-            const tbody = document.getElementById('portfolioTable');
-            let totalUnrealized = 0;
+        function drawZones() {
+            if(!chartData.length) return;
+            const lastPrice = chartData[chartData.length-1].close;
+            const r = lastPrice * 0.05;
+            
+            // FVG
+            let l1 = mainSeries.createPriceLine({ price: lastPrice+(r*0.6), color: '#ef4444', lineStyle: 2, title: 'FVG/Supply' });
+            let l2 = mainSeries.createPriceLine({ price: lastPrice+(r*0.3), color: '#ef4444', lineWidth: 1 });
+            // Demand
+            let l3 = mainSeries.createPriceLine({ price: lastPrice-(r*0.3), color: '#10b981', lineStyle: 2, title: 'Demand' });
+            let l4 = mainSeries.createPriceLine({ price: lastPrice-(r*0.6), color: '#10b981', lineWidth: 1 });
+            
+            zonesLines = [l1, l2, l3, l4];
+        }
 
-            if(portfolioData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-500"><i class="fa-solid fa-folder-open text-2xl mb-2 block"></i> ยังไม่มีข้อมูลพอร์ตโฟลิโอ</td></tr>';
-                document.getElementById('totalPL').innerText = '$0.00';
-                document.getElementById('totalPL').className = 'text-xl font-bold font-mono text-gray-400';
+        // ================= Stock Screener Logic =================
+        const mockStocks = [
+            { sym: 'PTT', price: 34.50, pe: 10.5, pbv: 0.9, roe: 12.5, div: 5.8 },
+            { sym: 'AOT', price: 65.25, pe: 45.2, pbv: 5.1, roe: 8.2, div: 1.5 },
+            { sym: 'CPALL', price: 55.00, pe: 28.4, pbv: 4.2, roe: 15.0, div: 2.1 },
+            { sym: 'ADVANC', price: 210.00, pe: 18.5, pbv: 7.5, roe: 35.2, div: 4.5 },
+            { sym: 'KBANK', price: 125.00, pe: 7.8, pbv: 0.6, roe: 8.5, div: 4.0 },
+            { sym: 'SCC', price: 260.00, pe: 14.2, pbv: 1.2, roe: 9.8, div: 3.5 },
+            { sym: 'TISCO', price: 98.50, pe: 11.5, pbv: 1.8, roe: 18.5, div: 8.2 }
+        ];
+
+        window.scanStocks = function() {
+            const peMax = parseFloat(document.getElementById('peFilter').value);
+            const divMin = parseFloat(document.getElementById('divFilter').value);
+            const roeMin = parseFloat(document.getElementById('roeFilter').value);
+
+            const filtered = mockStocks.filter(s => s.pe <= peMax && s.div >= divMin && s.roe >= roeMin);
+            
+            const tbody = document.getElementById('scanResultsTable');
+            document.getElementById('scanCount').innerText = filtered.length;
+            tbody.innerHTML = '';
+
+            if(filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-gray-500 py-4">ไม่พบหุ้นที่ตรงกับเงื่อนไข</td></tr>';
                 return;
             }
 
-            let html = '';
-            portfolioData.forEach(item => {
-                const liveP = livePrices[item.symbol] || item.buyPrice; // fallback if live not loaded
-                const currentVal = liveP * item.amount;
-                const costVal = item.buyPrice * item.amount;
-                const pl = currentVal - costVal;
-                const plPct = (pl / costVal) * 100;
-                
-                totalUnrealized += pl;
-
-                const colorClass = pl >= 0 ? 'text-secondary' : 'text-danger';
-                const sign = pl >= 0 ? '+' : '';
-
-                html += `
+            filtered.forEach(s => {
+                tbody.innerHTML += `
                     <tr>
-                        <td class="font-bold text-white">${item.symbol}</td>
-                        <td>${item.amount}</td>
-                        <td class="text-gray-400">$${item.buyPrice.toLocaleString(undefined, {minimumFractionDigits:2})}</td>
-                        <td class="text-primary font-bold">$${liveP.toLocaleString(undefined, {minimumFractionDigits:2})}</td>
-                        <td class="text-right ${colorClass} font-bold">${sign}$${Math.abs(pl).toLocaleString(undefined, {minimumFractionDigits:2})} <span class="text-xs">(${sign}${plPct.toFixed(2)}%)</span></td>
-                        <td class="text-center">
-                            <button onclick="deletePortfolioItem('${item.id}')" class="text-red-500 hover:text-red-400 p-2"><i class="fa-solid fa-trash-can"></i></button>
-                        </td>
+                        <td class="font-bold text-white">${s.sym}</td>
+                        <td>${s.price.toFixed(2)}</td>
+                        <td class="${s.pe < 15 ? 'text-profit' : ''}">${s.pe}</td>
+                        <td>${s.pbv}</td>
+                        <td class="font-medium">${s.roe}%</td>
+                        <td class="text-profit font-bold">${s.div}%</td>
+                        <td><button class="text-xs bg-white/10 hover:bg-primary px-2 py-1 rounded transition">ดูข้อมูล</button></td>
                     </tr>
                 `;
             });
+        };
 
-            tbody.innerHTML = html;
-
-            // Update Total Header
-            const totalEl = document.getElementById('totalPL');
-            const totalSign = totalUnrealized >= 0 ? '+' : '-';
-            totalEl.innerText = `${totalSign}$${Math.abs(totalUnrealized).toLocaleString(undefined, {minimumFractionDigits:2})}`;
-            totalEl.className = `text-xl font-bold font-mono ${totalUnrealized >= 0 ? 'text-secondary drop-shadow-[0_0_10px_rgba(0,255,136,0.5)]' : 'text-danger drop-shadow-[0_0_10px_rgba(255,0,85,0.5)]'}`;
+        // ================= PDPA Logic =================
+        function checkPDPA() {
+            if(!localStorage.getItem('pdpa_accepted')) {
+                setTimeout(() => {
+                    document.getElementById('pdpaBanner').classList.remove('translate-y-full');
+                }, 2000);
+            }
         }
+        
+        window.acceptPDPA = function() {
+            localStorage.setItem('pdpa_accepted', 'true');
+            document.getElementById('pdpaBanner').classList.add('translate-y-full');
+        };
 
-        // Run
-        initFirebase();
+        // ================= Init Application =================
+        window.addEventListener('DOMContentLoaded', () => {
+            loadChart();
+            scanStocks(); // Initial scan load
+            checkPDPA();
+        });
 
     </script>
 </body>
