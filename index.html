@@ -1,12 +1,13 @@
+```html
 <!DOCTYPE html>
-<html lang="th" class="dark">
+<html lang="th" class="dark scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FXPro - แพลตฟอร์มเทรด Forex ครบวงจร</title>
+    <title>FXPro Premium - แพลตฟอร์มเทรด Forex ครบวงจร</title>
     
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -17,22 +18,34 @@
     <!-- TradingView Lightweight Charts -->
     <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
 
-    <!-- Tailwind Config for Custom Colors and Dark Mode -->
+    <!-- Tailwind Config for Custom Colors -->
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['Prompt', 'sans-serif'],
-                    },
+                    fontFamily: { sans: ['Prompt', 'sans-serif'] },
                     colors: {
                         primary: '#3b82f6',
+                        primaryDark: '#1d4ed8',
                         secondary: '#10b981',
-                        dark: '#0f172a',
-                        darker: '#020617',
-                        card: '#1e293b',
-                        gold: '#fbbf24'
+                        dark: '#0B0E14',      /* Deep premium dark */
+                        darker: '#05070A',
+                        card: '#151A23',      /* Premium card color */
+                        cardHover: '#1A212D',
+                        gold: '#F59E0B',
+                        neonBlue: '#00f3ff',
+                        neonRed: '#ff0055'
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        }
                     }
                 }
             }
@@ -41,490 +54,649 @@
 
     <style>
         /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #1e293b;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #3b82f6;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #2563eb;
-        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0B0E14; }
+        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #00f3ff; }
         
-        .glass {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        /* Glassmorphism */
+        .glass-nav {
+            background: rgba(11, 14, 20, 0.8);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
-        
-        .light .glass {
-            background: rgba(255, 255, 255, 0.9);
-            border: 1px solid rgba(0, 0, 0, 0.1);
-        }
-
-        /* Hide sections by default */
-        .view-section {
-            display: none;
-            animation: fadeIn 0.3s ease-in-out;
-        }
-        .view-section.active {
-            display: block;
+        .glass-card {
+            background: rgba(21, 26, 35, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        /* Glowing Orbs Background */
+        .orb-1 { position: fixed; top: -10%; left: -10%; width: 50vw; height: 50vw; background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(0,0,0,0) 70%); border-radius: 50%; z-index: -1; pointer-events: none; }
+        .orb-2 { position: fixed; bottom: -20%; right: -10%; width: 60vw; height: 60vw; background: radial-gradient(circle, rgba(16,185,129,0.1) 0%, rgba(0,0,0,0) 70%); border-radius: 50%; z-index: -1; pointer-events: none; }
+        .orb-3 { position: fixed; top: 40%; left: 30%; width: 40vw; height: 40vw; background: radial-gradient(circle, rgba(139,92,246,0.1) 0%, rgba(0,0,0,0) 70%); border-radius: 50%; z-index: -1; pointer-events: none; }
+
+        /* All In Glowing Effect */
+        .all-in-active {
+            box-shadow: 0 0 15px rgba(255, 0, 85, 0.6);
+            border-color: #ff0055 !important;
+            background: rgba(255, 0, 85, 0.1) !important;
         }
 
-        .avatar-option.selected {
-            border: 4px solid #3b82f6;
-            transform: scale(1.1);
+        /* Fade In on Scroll */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease-out;
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Active Nav Link */
+        .nav-link.active {
+            color: #00f3ff;
+            position: relative;
+        }
+        .nav-link.active::after {
+            content: ''; position: absolute; bottom: -4px; left: 0; width: 100%; height: 2px; background: #00f3ff; border-radius: 2px;
+            box-shadow: 0 0 8px #00f3ff;
         }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-900 dark:bg-darker dark:text-gray-100 transition-colors duration-300 font-sans h-screen flex flex-col overflow-hidden">
+<body class="bg-darker text-gray-100 font-sans antialiased relative overflow-x-hidden">
+
+    <!-- Background Orbs -->
+    <div class="orb-1 animate-pulse-slow"></div>
+    <div class="orb-2 animate-float"></div>
+    <div class="orb-3 animate-pulse-slow" style="animation-delay: 2s;"></div>
 
     <!-- Navbar -->
-    <nav class="glass sticky top-0 z-50 px-4 py-3 shadow-md">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
+    <nav class="glass-nav fixed top-0 w-full z-50 transition-all duration-300 py-3">
+        <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
             <!-- Logo -->
-            <div class="flex items-center gap-2 cursor-pointer" onclick="switchView('dashboard')">
-                <i class="fa-solid fa-chart-line text-primary text-2xl"></i>
-                <span class="text-xl font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">FXPro</span>
+            <div class="flex items-center gap-2 cursor-pointer" onclick="window.scrollTo(0,0)">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-neonBlue to-primary flex items-center justify-center shadow-[0_0_15px_rgba(0,243,255,0.4)]">
+                    <i class="fa-solid fa-chart-line text-dark text-xl"></i>
+                </div>
+                <span class="text-2xl font-extrabold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">FX<span class="text-neonBlue">PRO</span></span>
             </div>
 
             <!-- Desktop Menu -->
-            <div class="hidden md:flex items-center gap-6">
-                <button onclick="switchView('dashboard')" class="nav-btn hover:text-primary transition font-medium"><i class="fa-solid fa-chart-pie mr-1"></i> เทรด/วิเคราะห์</button>
-                <button onclick="switchView('ebook')" class="nav-btn hover:text-primary transition font-medium"><i class="fa-solid fa-book mr-1"></i> คลังความรู้</button>
-                <button onclick="switchView('vip')" class="nav-btn hover:text-gold transition font-medium"><i class="fa-solid fa-crown mr-1"></i> VIP / Discord</button>
+            <div class="hidden md:flex items-center gap-8">
+                <a href="#dashboard" class="nav-link active font-medium hover:text-neonBlue transition duration-300" data-target="dashboard"><i class="fa-solid fa-chart-pie mr-1"></i> เทรด/วิเคราะห์</a>
+                <a href="#market" class="nav-link font-medium hover:text-neonBlue transition duration-300" data-target="market"><i class="fa-solid fa-globe mr-1"></i> สภาวะตลาด</a>
+                <a href="#ebook" class="nav-link font-medium hover:text-neonBlue transition duration-300" data-target="ebook"><i class="fa-solid fa-book mr-1"></i> คลังความรู้</a>
+                <a href="#vip" class="nav-link font-medium text-gold hover:text-yellow-300 transition duration-300 drop-shadow-[0_0_5px_rgba(245,158,11,0.5)]" data-target="vip"><i class="fa-solid fa-crown mr-1"></i> VIP</a>
             </div>
 
             <!-- Right Controls -->
             <div class="flex items-center gap-4">
-                <!-- Theme Toggle -->
-                <button id="themeToggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition">
-                    <i class="fa-solid fa-moon text-lg dark:hidden block text-gray-600"></i>
-                    <i class="fa-solid fa-sun text-lg hidden dark:block text-yellow-400"></i>
+                <!-- Profile / Login -->
+                <button id="userProfileBtn" class="flex items-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded-full transition duration-300 shadow-lg backdrop-blur-md">
+                    <img id="displayAvatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Guest" class="w-8 h-8 rounded-full bg-gray-800 border border-gray-600">
+                    <span id="displayUsername" class="text-sm font-medium hidden sm:block">Login (Firebase)</span>
                 </button>
 
-                <!-- Profile / Login -->
-                <div id="userProfile" class="flex items-center gap-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-1 pr-3 rounded-full transition" onclick="openLoginModal()">
-                    <img id="displayAvatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Guest" alt="Avatar" class="w-8 h-8 rounded-full bg-gray-300">
-                    <span id="displayUsername" class="text-sm font-medium hidden sm:block">เข้าสู่ระบบ</span>
-                </div>
-
                 <!-- Mobile Menu Button -->
-                <button class="md:hidden p-2" onclick="toggleMobileMenu()">
-                    <i class="fa-solid fa-bars text-xl"></i>
+                <button class="md:hidden p-2 text-gray-300 hover:text-white" onclick="document.getElementById('mobileMenu').classList.toggle('hidden')">
+                    <i class="fa-solid fa-bars text-2xl"></i>
                 </button>
             </div>
         </div>
     </nav>
 
     <!-- Mobile Menu -->
-    <div id="mobileMenu" class="hidden md:hidden glass absolute top-[60px] left-0 w-full z-40 flex flex-col p-4 gap-4 shadow-lg border-b border-gray-200 dark:border-gray-800">
-        <button onclick="switchView('dashboard'); toggleMobileMenu()" class="text-left py-2 hover:text-primary"><i class="fa-solid fa-chart-pie w-6"></i> เทรด/วิเคราะห์</button>
-        <button onclick="switchView('ebook'); toggleMobileMenu()" class="text-left py-2 hover:text-primary"><i class="fa-solid fa-book w-6"></i> คลังความรู้ E-Book</button>
-        <button onclick="switchView('vip'); toggleMobileMenu()" class="text-left py-2 hover:text-gold"><i class="fa-solid fa-crown w-6"></i> VIP / Discord</button>
+    <div id="mobileMenu" class="hidden md:hidden glass-nav fixed top-[68px] left-0 w-full z-40 flex flex-col p-4 gap-2 border-b border-white/10">
+        <a href="#dashboard" class="p-3 rounded-lg hover:bg-white/5 font-medium" onclick="document.getElementById('mobileMenu').classList.add('hidden')"><i class="fa-solid fa-chart-pie w-6"></i> เทรด/วิเคราะห์</a>
+        <a href="#market" class="p-3 rounded-lg hover:bg-white/5 font-medium" onclick="document.getElementById('mobileMenu').classList.add('hidden')"><i class="fa-solid fa-globe w-6"></i> สภาวะตลาด</a>
+        <a href="#ebook" class="p-3 rounded-lg hover:bg-white/5 font-medium" onclick="document.getElementById('mobileMenu').classList.add('hidden')"><i class="fa-solid fa-book w-6"></i> คลังความรู้</a>
+        <a href="#vip" class="p-3 rounded-lg hover:bg-white/5 font-medium text-gold" onclick="document.getElementById('mobileMenu').classList.add('hidden')"><i class="fa-solid fa-crown w-6"></i> VIP</a>
     </div>
 
-    <!-- Main Content Area -->
-    <main class="flex-1 overflow-y-auto p-4 md:p-6">
-        <div class="max-w-7xl mx-auto h-full">
+    <!-- Main Content -->
+    <main class="pt-24 pb-12">
+        
+        <!-- ================= SECTION 1: DASHBOARD & CHART ================= -->
+        <section id="dashboard" class="min-h-[90vh] flex flex-col justify-center px-4 md:px-6 max-w-[1400px] mx-auto reveal active pt-10">
+            <!-- Header Text -->
+            <div class="mb-6 flex flex-col md:flex-row justify-between items-end">
+                <div>
+                    <h1 class="text-4xl md:text-5xl font-extrabold mb-2">Pro <span class="text-transparent bg-clip-text bg-gradient-to-r from-neonBlue to-primary">Terminal</span></h1>
+                    <p class="text-gray-400">วิเคราะห์กราฟแบบเรียลไทม์ พร้อมคำนวณความเสี่ยงด้วย AI-Powered System</p>
+                </div>
+            </div>
 
-            <!-- ================= VIEW: DASHBOARD & CHART ================= -->
-            <section id="dashboard" class="view-section active h-full flex flex-col">
-                <div class="flex flex-col lg:flex-row gap-6 h-full">
+            <div class="flex flex-col lg:flex-row gap-6 h-full lg:h-[70vh]">
+                
+                <!-- Left: Chart Area -->
+                <div class="flex-1 flex flex-col glass-card rounded-2xl overflow-hidden relative group">
+                    <!-- Glow effect behind card -->
+                    <div class="absolute -inset-0.5 bg-gradient-to-r from-primary to-neonBlue opacity-0 group-hover:opacity-20 transition duration-500 rounded-2xl blur"></div>
                     
-                    <!-- Left: Chart Area -->
-                    <div class="flex-1 flex flex-col bg-white dark:bg-card rounded-2xl shadow-xl overflow-hidden border border-gray-200 dark:border-gray-800">
+                    <div class="relative z-10 flex flex-col h-full bg-card/90">
                         <!-- Chart Header -->
-                        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex flex-wrap justify-between items-center gap-4">
-                            <div>
-                                <h2 class="text-xl font-bold flex items-center gap-2">
-                                    <span class="text-gold"><i class="fa-solid fa-coins"></i></span> XAUUSD (Gold)
-                                </h2>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">สถานะ: รอเข้าเทรด</p>
+                        <div class="p-4 border-b border-white/5 flex flex-wrap justify-between items-center gap-4 bg-black/20">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center shadow-lg">
+                                    <i class="fa-solid fa-coins text-dark font-bold"></i>
+                                </div>
+                                <div>
+                                    <h2 class="text-xl font-bold">XAUUSD <span class="text-sm font-normal text-gray-400">Gold / US Dollar</span></h2>
+                                    <p class="text-xs text-neonBlue flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-neonBlue animate-pulse"></span> Market Open</p>
+                                </div>
                             </div>
                             
                             <!-- Plan Toggle -->
-                            <div class="flex items-center gap-3 bg-gray-100 dark:bg-dark p-2 rounded-lg">
-                                <span class="text-sm font-medium">แสดงแผนเทรด (FVG/Demand)</span>
+                            <div class="flex items-center gap-3 bg-black/40 px-4 py-2 rounded-xl border border-white/10">
+                                <span class="text-sm font-medium text-gray-300"><i class="fa-solid fa-layer-group text-primary mr-1"></i> โซน FVG/Demand</span>
                                 <label class="relative inline-flex items-center cursor-pointer">
                                   <input type="checkbox" id="togglePlan" class="sr-only peer" checked>
-                                  <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                  <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-neonBlue shadow-[0_0_10px_rgba(0,243,255,0.3)] peer-checked:shadow-[0_0_15px_rgba(0,243,255,0.6)]"></div>
                                 </label>
                             </div>
                         </div>
 
                         <!-- Chart Container -->
-                        <div id="tvchart" class="flex-1 w-full relative bg-white dark:bg-[#131722]">
-                            <!-- Chart goes here via JS -->
-                        </div>
+                        <div id="tvchart" class="flex-1 w-full relative h-[400px] lg:h-full"></div>
                     </div>
+                </div>
 
-                    <!-- Right: Lot Size Calculator -->
-                    <div class="w-full lg:w-96 bg-white dark:bg-card rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 flex flex-col h-fit shrink-0">
-                        <div class="p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-primary to-blue-600 rounded-t-2xl">
-                            <h2 class="text-lg font-bold text-white flex items-center gap-2">
-                                <i class="fa-solid fa-calculator"></i> คำนวณ Lot Size อัจฉริยะ
+                <!-- Right: Lot Size Calculator -->
+                <div class="w-full lg:w-[400px] glass-card rounded-2xl flex flex-col h-fit shrink-0 relative group">
+                    <div class="absolute -inset-0.5 bg-gradient-to-b from-secondary to-primary opacity-20 rounded-2xl blur"></div>
+                    
+                    <div class="relative z-10 p-6 h-full flex flex-col gap-6 bg-card/90 rounded-2xl">
+                        <div class="text-center">
+                            <h2 class="text-2xl font-bold text-white flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-calculator text-primary"></i> Position Size
                             </h2>
+                            <p class="text-sm text-gray-400 mt-1">คำนวณหลอดเทรดแม่นยำ 100%</p>
                         </div>
                         
-                        <div class="p-6 flex flex-col gap-5">
+                        <div class="space-y-4">
                             <div>
-                                <label class="block text-sm font-medium mb-1">เงินทุนในพอร์ต (USD)</label>
+                                <label class="block text-sm font-medium text-gray-300 mb-1">ยอดเงินในพอร์ต (Balance USD)</label>
+                                <div class="relative group-focus-within:shadow-[0_0_15px_rgba(59,130,246,0.3)] transition rounded-xl">
+                                    <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 font-bold">$</span>
+                                    <input type="number" id="calcBalance" value="1000" class="w-full pl-10 pr-4 py-3 bg-dark border border-gray-700 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-white text-lg font-medium transition" placeholder="1000">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-1">ระยะยอมขาดทุน (Stop Loss Point)</label>
                                 <div class="relative">
-                                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">$</span>
-                                    <input type="number" id="calcBalance" value="1000" class="w-full pl-8 pr-4 py-2 bg-gray-50 dark:bg-dark border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:outline-none text-gray-900 dark:text-white" placeholder="เช่น 1000">
+                                    <input type="number" id="calcSL" value="300" class="w-full pl-4 pr-12 py-3 bg-dark border border-gray-700 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-white text-lg font-medium transition" placeholder="300">
+                                    <span class="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-500 text-sm">จุด</span>
                                 </div>
                             </div>
 
                             <div>
-                                <label class="block text-sm font-medium mb-1">ระยะ Stop Loss (Point)</label>
-                                <input type="number" id="calcSL" value="300" class="w-full px-4 py-2 bg-gray-50 dark:bg-dark border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:outline-none text-gray-900 dark:text-white" placeholder="เช่น 300 จุด">
-                            </div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">เลือกกลยุทธ์ความเสี่ยง</label>
+                                <div class="grid grid-cols-1 gap-3" id="riskSelectors">
+                                    <!-- Safe -->
+                                    <label class="flex items-center p-3 border border-gray-700 bg-dark/50 rounded-xl cursor-pointer hover:border-secondary transition risk-label">
+                                        <input type="radio" name="riskLevel" value="2" class="hidden peer">
+                                        <div class="w-5 h-5 rounded-full border-2 border-gray-500 mr-3 peer-checked:border-secondary peer-checked:bg-secondary flex items-center justify-center transition">
+                                            <i class="fa-solid fa-check text-white text-xs opacity-0 peer-checked:opacity-100"></i>
+                                        </div>
+                                        <div>
+                                            <div class="font-medium text-white">Safe Trade <span class="text-secondary text-sm">(2%)</span></div>
+                                            <div class="text-xs text-gray-500">MM ตามหลักสากล ปลอดภัยพอร์ตโตยั่งยืน</div>
+                                        </div>
+                                    </label>
 
-                            <div>
-                                <label class="block text-sm font-medium mb-2">เลือกระดับความเสี่ยง</label>
-                                <div class="grid grid-cols-1 gap-2">
-                                    <label class="flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-dark transition">
-                                        <input type="radio" name="riskLevel" value="1" class="text-primary w-4 h-4 focus:ring-primary" checked>
-                                        <span class="ml-2 font-medium text-secondary">ปลอดภัยสุด (1-2%)</span>
+                                    <!-- Medium -->
+                                    <label class="flex items-center p-3 border border-gray-700 bg-dark/50 rounded-xl cursor-pointer hover:border-yellow-500 transition risk-label">
+                                        <input type="radio" name="riskLevel" value="5" class="hidden peer" checked>
+                                        <div class="w-5 h-5 rounded-full border-2 border-gray-500 mr-3 peer-checked:border-yellow-500 peer-checked:bg-yellow-500 flex items-center justify-center transition">
+                                            <i class="fa-solid fa-check text-dark text-xs opacity-0 peer-checked:opacity-100"></i>
+                                        </div>
+                                        <div>
+                                            <div class="font-medium text-white">Aggressive <span class="text-yellow-500 text-sm">(5%)</span></div>
+                                            <div class="text-xs text-gray-500">รับความเสี่ยงได้ อยากปั้นพอร์ตไวขึ้น</div>
+                                        </div>
                                     </label>
-                                    <label class="flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-dark transition">
-                                        <input type="radio" name="riskLevel" value="5" class="text-primary w-4 h-4 focus:ring-primary">
-                                        <span class="ml-2 font-medium text-yellow-500">ปานกลาง (5%)</span>
-                                    </label>
-                                    <label class="flex items-center p-3 border border-red-500/30 rounded-lg cursor-pointer bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20 transition">
-                                        <input type="radio" name="riskLevel" value="20" class="text-red-500 w-4 h-4 focus:ring-red-500">
-                                        <span class="ml-2 font-bold text-red-500"><i class="fa-solid fa-fire"></i> สายซิ่ง (All in 20%+)</span>
+
+                                    <!-- ALL IN (สายซิ่ง) -->
+                                    <label class="flex items-center p-3 border border-red-900/50 bg-red-950/20 rounded-xl cursor-pointer hover:border-neonRed transition relative overflow-hidden risk-label" id="labelAllIn">
+                                        <div class="absolute inset-0 bg-gradient-to-r from-red-600/10 to-transparent"></div>
+                                        <input type="radio" name="riskLevel" value="100" class="hidden peer">
+                                        <div class="w-5 h-5 rounded-full border-2 border-red-500 mr-3 peer-checked:border-neonRed peer-checked:bg-neonRed flex items-center justify-center transition relative z-10 shadow-[0_0_10px_rgba(255,0,85,0.8)]">
+                                            <i class="fa-solid fa-fire text-white text-xs opacity-0 peer-checked:opacity-100"></i>
+                                        </div>
+                                        <div class="relative z-10">
+                                            <div class="font-bold text-neonRed drop-shadow-[0_0_5px_rgba(255,0,85,0.5)]"><i class="fa-solid fa-skull"></i> สายซิ่ง ALL-IN <span class="text-white text-sm">(100% Margin)</span></div>
+                                            <div class="text-xs text-red-400">ใส่สุดหลอด แตกคือแตก รวยคือรวย (Risk = Balance)</div>
+                                        </div>
                                     </label>
                                 </div>
                             </div>
 
-                            <button onclick="calculateLot()" class="w-full py-3 mt-2 bg-primary hover:bg-blue-600 text-white font-bold rounded-lg shadow-lg shadow-blue-500/30 transition transform hover:-translate-y-1">
-                                คำนวณ Lot Size
+                            <button id="btnCalculate" class="w-full py-4 mt-2 bg-gradient-to-r from-primaryDark to-neonBlue hover:from-primary hover:to-blue-400 text-white font-bold text-lg rounded-xl shadow-[0_0_20px_rgba(0,243,255,0.3)] hover:shadow-[0_0_30px_rgba(0,243,255,0.6)] transition transform hover:-translate-y-1 flex justify-center items-center gap-2">
+                                <i class="fa-solid fa-bolt"></i> Calculate Lot Size
                             </button>
 
                             <!-- Result Box -->
-                            <div id="calcResult" class="hidden mt-4 p-4 rounded-lg bg-gray-100 dark:bg-dark text-center border-l-4 border-primary">
-                                <p class="text-sm text-gray-500 dark:text-gray-400">ปริมาณการเข้าเทรดที่แนะนำ</p>
-                                <p class="text-3xl font-bold text-gray-900 dark:text-white mt-1"><span id="resultLot">0.00</span> <span class="text-lg font-normal">Lots</span></p>
-                                <p class="text-xs text-gray-500 mt-2">ยอดเสียสูงสุดหากโดน SL: $<span id="resultRiskAmount">0</span></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ================= VIEW: E-BOOK ================= -->
-            <section id="ebook" class="view-section pb-10">
-                <div class="text-center mb-10">
-                    <h1 class="text-3xl md:text-4xl font-bold mb-4">คลังความรู้ <span class="text-primary">E-Book</span></h1>
-                    <p class="text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">ศึกษาพื้นฐานการเทรด จิตวิทยา และระบบเทรด SMC / Price Action ได้ฟรีที่นี่</p>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                    <!-- Book 1 -->
-                    <div class="bg-white dark:bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition transform hover:-translate-y-2 border border-gray-200 dark:border-gray-800">
-                        <div class="h-48 bg-gradient-to-br from-blue-900 to-primary flex items-center justify-center p-4 relative">
-                            <div class="absolute top-2 right-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded">ฟรี</div>
-                            <h3 class="text-white text-2xl font-bold text-center drop-shadow-md">Price Action 101<br><span class="text-sm font-normal">พื้นฐานแท่งเทียน</span></h3>
-                        </div>
-                        <div class="p-5">
-                            <h4 class="font-bold text-lg mb-2">เจาะลึก Price Action</h4>
-                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">เรียนรู้วิธีการอ่านแท่งเทียนเบื้องต้น รูปแบบกลับตัว และการตีเส้นแนวรับแนวต้าน</p>
-                            <button class="w-full py-2 bg-gray-100 dark:bg-dark hover:bg-primary hover:text-white dark:hover:bg-primary rounded-lg transition font-medium">
-                                อ่านเลย
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Book 2 -->
-                    <div class="bg-white dark:bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition transform hover:-translate-y-2 border border-gray-200 dark:border-gray-800">
-                        <div class="h-48 bg-gradient-to-br from-purple-900 to-pink-600 flex items-center justify-center p-4 relative">
-                            <h3 class="text-white text-2xl font-bold text-center drop-shadow-md">SMC Mastery<br><span class="text-sm font-normal">เทรดตามรอยเจ้ามือ</span></h3>
-                        </div>
-                        <div class="p-5">
-                            <h4 class="font-bold text-lg mb-2">Smart Money Concepts</h4>
-                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">เข้าใจโครงสร้างตลาด (BOS, CHoCH) การหา Order Block และ FVG เพื่อจุดเข้าที่แม่นยำ</p>
-                            <button class="w-full py-2 bg-gray-100 dark:bg-dark hover:bg-primary hover:text-white dark:hover:bg-primary rounded-lg transition font-medium">
-                                อ่านเลย
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Book 3 -->
-                    <div class="bg-white dark:bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition transform hover:-translate-y-2 border border-gray-200 dark:border-gray-800">
-                        <div class="h-48 bg-gradient-to-br from-gray-800 to-black flex items-center justify-center p-4 relative">
-                            <div class="absolute top-2 right-2 bg-gold text-dark text-xs font-bold px-2 py-1 rounded">VIP</div>
-                            <h3 class="text-white text-2xl font-bold text-center drop-shadow-md">Trading Psychology<br><span class="text-sm font-normal">จิตวิทยาการลงทุน</span></h3>
-                        </div>
-                        <div class="p-5">
-                            <h4 class="font-bold text-lg mb-2">ควบคุมอารมณ์ ควบคุมพอร์ต</h4>
-                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">ปลดล็อกมายเซ็ตในการเทรด ทำอย่างไรไม่ให้ล้างพอร์ต และวินัยคือสิ่งที่สำคัญที่สุด</p>
-                            <button class="w-full py-2 bg-gold hover:bg-yellow-500 text-dark rounded-lg transition font-bold">
-                                <i class="fa-solid fa-lock mr-1"></i> สมัคร VIP เพื่ออ่าน
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ================= VIEW: VIP / DISCORD ================= -->
-            <section id="vip" class="view-section">
-                <div class="max-w-4xl mx-auto">
-                    <div class="bg-gradient-to-br from-darker via-[#1e1b4b] to-purple-900 rounded-3xl p-8 md:p-12 text-white shadow-2xl relative overflow-hidden border border-purple-500/30">
-                        
-                        <!-- Decorative shapes -->
-                        <div class="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-                        <div class="absolute bottom-0 left-0 w-64 h-64 bg-gold/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
-
-                        <div class="relative z-10 text-center">
-                            <div class="inline-block p-4 bg-white/10 rounded-full backdrop-blur-sm mb-6 border border-white/20">
-                                <i class="fa-brands fa-discord text-5xl text-[#5865F2]"></i>
-                            </div>
-                            <h1 class="text-4xl md:text-5xl font-bold mb-4">เข้าร่วม <span class="text-gold">VIP Community</span></h1>
-                            <p class="text-lg text-gray-300 mb-10 max-w-2xl mx-auto">ยกระดับการเทรดของคุณด้วยสัญญาณเทรดสด แผนการเทรดรายวัน และปรึกษาโค้ชส่วนตัวแบบ Exclusive ใน Discord</p>
-
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 text-left">
-                                <div class="bg-white/5 backdrop-blur-md p-6 rounded-2xl border border-white/10">
-                                    <i class="fa-solid fa-bullseye text-2xl text-red-400 mb-3"></i>
-                                    <h3 class="font-bold text-xl mb-2">Signal แม่นยำ</h3>
-                                    <p class="text-sm text-gray-400">บอกจุดเข้า จุดออก SL/TP พร้อมเหตุผลประกอบการเข้าออเดอร์</p>
-                                </div>
-                                <div class="bg-white/5 backdrop-blur-md p-6 rounded-2xl border border-white/10">
-                                    <i class="fa-solid fa-graduation-cap text-2xl text-blue-400 mb-3"></i>
-                                    <h3 class="font-bold text-xl mb-2">คลาสเรียนสด</h3>
-                                    <p class="text-sm text-gray-400">ไลฟ์สอนเทรด พาเทรดชนข่าว Non-farm และวิเคราะห์กราฟทุกสัปดาห์</p>
-                                </div>
-                                <div class="bg-white/5 backdrop-blur-md p-6 rounded-2xl border border-white/10">
-                                    <i class="fa-solid fa-headset text-2xl text-secondary mb-3"></i>
-                                    <h3 class="font-bold text-xl mb-2">โค้ชส่วนตัว</h3>
-                                    <p class="text-sm text-gray-400">ตรวจการบ้าน วิเคราะห์ข้อผิดพลาด และช่วยปรับปรุงระบบเทรดของคุณ</p>
+                            <div id="calcResult" class="hidden mt-4 p-5 rounded-xl bg-gradient-to-br from-gray-900 to-black border border-gray-800 text-center relative overflow-hidden">
+                                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-neonBlue to-transparent"></div>
+                                <p class="text-sm text-gray-400">แนะนำให้ออกหลอด (Lot Size)</p>
+                                <p class="text-4xl font-black text-white mt-1 drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]"><span id="resultLot">0.00</span></p>
+                                <div class="mt-3 pt-3 border-t border-gray-800 flex justify-between text-sm">
+                                    <span class="text-gray-500">ยอดเสียสูงสุด (SL):</span>
+                                    <span class="text-red-400 font-medium">-$<span id="resultRiskAmount">0</span></span>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-                            <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                                <a href="#" class="px-8 py-4 bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-xl font-bold text-lg transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/50">
-                                    <i class="fa-brands fa-discord"></i> Join Discord
-                                </a>
-                                <a href="#" class="px-8 py-4 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-lg transition flex items-center justify-center gap-2 backdrop-blur-sm border border-white/20">
-                                    <i class="fa-solid fa-message"></i> ติดต่อแอดมิน
-                                </a>
+        <!-- ================= SECTION 2: MARKET OVERVIEW (NEW) ================= -->
+        <section id="market" class="min-h-[80vh] py-20 px-4 md:px-6 max-w-7xl mx-auto reveal pt-24 mt-10">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-extrabold mb-4">Market <span class="text-secondary">Overview</span></h2>
+                <p class="text-gray-400 max-w-2xl mx-auto">ภาพรวมตลาด สภาวะเงินทุน และปฏิทินเศรษฐกิจที่สำคัญประจำสัปดาห์</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Market Sentiment (2 Columns on large screens) -->
+                <div class="lg:col-span-2 glass-card rounded-2xl p-6">
+                    <h3 class="text-xl font-bold mb-6 flex items-center gap-2"><i class="fa-solid fa-scale-balanced text-primary"></i> Market Sentiment (แรงซื้อ/แรงขาย)</h3>
+                    <div class="space-y-6">
+                        <!-- EURUSD -->
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <span class="font-bold flex items-center gap-2"><img src="https://flagcdn.com/w20/eu.png" class="w-5 h-3"> EUR/USD</span>
+                                <span class="text-sm text-gray-400">65% Buyers</span>
+                            </div>
+                            <div class="w-full h-3 bg-red-500/30 rounded-full overflow-hidden flex">
+                                <div class="h-full bg-secondary shadow-[0_0_10px_rgba(16,185,129,0.8)]" style="width: 65%"></div>
+                                <div class="h-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]" style="width: 35%"></div>
+                            </div>
+                        </div>
+                        <!-- GBPUSD -->
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <span class="font-bold flex items-center gap-2"><img src="https://flagcdn.com/w20/gb.png" class="w-5 h-3"> GBP/USD</span>
+                                <span class="text-sm text-gray-400">40% Buyers</span>
+                            </div>
+                            <div class="w-full h-3 bg-red-500/30 rounded-full overflow-hidden flex">
+                                <div class="h-full bg-secondary shadow-[0_0_10px_rgba(16,185,129,0.8)]" style="width: 40%"></div>
+                                <div class="h-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]" style="width: 60%"></div>
+                            </div>
+                        </div>
+                        <!-- USDJPY -->
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <span class="font-bold flex items-center gap-2"><img src="https://flagcdn.com/w20/us.png" class="w-5 h-3"> USD/JPY</span>
+                                <span class="text-sm text-gray-400">80% Buyers (Strong Bullish)</span>
+                            </div>
+                            <div class="w-full h-3 bg-red-500/30 rounded-full overflow-hidden flex">
+                                <div class="h-full bg-secondary shadow-[0_0_10px_rgba(16,185,129,0.8)]" style="width: 80%"></div>
+                                <div class="h-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]" style="width: 20%"></div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </section>
 
-        </div>
+                <!-- Economic Calendar -->
+                <div class="glass-card rounded-2xl p-6">
+                    <h3 class="text-xl font-bold mb-6 flex items-center gap-2"><i class="fa-solid fa-calendar-days text-gold"></i> ข่าวเศรษฐกิจสำคัญ</h3>
+                    <div class="space-y-4">
+                        <div class="p-3 bg-dark/50 rounded-xl border-l-4 border-red-500 hover:bg-dark transition">
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-gray-400">วันนี้ 19:30</span>
+                                <span class="text-red-500"><i class="fa-solid fa-fire"></i><i class="fa-solid fa-fire"></i><i class="fa-solid fa-fire"></i></span>
+                            </div>
+                            <div class="font-bold">Non-Farm Payrolls (USD)</div>
+                            <div class="text-xs text-gray-500 mt-1">คาดการณ์: 180K | ก่อนหน้า: 215K</div>
+                        </div>
+                        <div class="p-3 bg-dark/50 rounded-xl border-l-4 border-yellow-500 hover:bg-dark transition">
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-gray-400">พรุ่งนี้ 20:00</span>
+                                <span class="text-yellow-500"><i class="fa-solid fa-fire"></i><i class="fa-solid fa-fire"></i></span>
+                            </div>
+                            <div class="font-bold">Fed Chair Powell Speaks</div>
+                        </div>
+                        <div class="p-3 bg-dark/50 rounded-xl border-l-4 border-red-500 hover:bg-dark transition">
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-gray-400">พุธ 19:30</span>
+                                <span class="text-red-500"><i class="fa-solid fa-fire"></i><i class="fa-solid fa-fire"></i><i class="fa-solid fa-fire"></i></span>
+                            </div>
+                            <div class="font-bold">CPI m/m (เงินเฟ้อ)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SECTION 3: E-BOOK ================= -->
+        <section id="ebook" class="min-h-[80vh] py-20 px-4 md:px-6 max-w-7xl mx-auto reveal pt-24 mt-10">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-extrabold mb-4">คลังความรู้ <span class="text-primary">E-Book & Courses</span></h2>
+                <p class="text-gray-400 max-w-2xl mx-auto">ระบบเทรดอัปเดตใหม่ล่าสุด ศึกษาฟรีสำหรับสมาชิกและบทเรียนพิเศษสำหรับ VIP</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Book 1 -->
+                <div class="glass-card rounded-2xl overflow-hidden group hover:-translate-y-2 transition duration-300">
+                    <div class="h-48 bg-[url('https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80')] bg-cover bg-center relative">
+                        <div class="absolute inset-0 bg-gradient-to-t from-card to-transparent"></div>
+                        <div class="absolute top-3 right-3 bg-secondary text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">Free</div>
+                        <div class="absolute bottom-4 left-4">
+                            <h3 class="text-2xl font-bold text-white drop-shadow-lg">SMC Mastery</h3>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <p class="text-sm text-gray-400 mb-5">เข้าใจพฤติกรรมรายใหญ่ (Smart Money) การหา Order Block, FVG และจุดเข้า Liquidity Sweeps</p>
+                        <button class="w-full py-3 bg-white/10 hover:bg-primary text-white rounded-xl transition font-medium border border-white/10 group-hover:border-primary">
+                            เริ่มอ่านเลย <i class="fa-solid fa-arrow-right ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Book 2 -->
+                <div class="glass-card rounded-2xl overflow-hidden group hover:-translate-y-2 transition duration-300">
+                    <div class="h-48 bg-[url('https://images.unsplash.com/photo-1535320903710-d993d3d77d29?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80')] bg-cover bg-center relative">
+                        <div class="absolute inset-0 bg-gradient-to-t from-card to-transparent"></div>
+                        <div class="absolute top-3 right-3 bg-secondary text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">Free</div>
+                        <div class="absolute bottom-4 left-4">
+                            <h3 class="text-2xl font-bold text-white drop-shadow-lg">Trading Psychology</h3>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <p class="text-sm text-gray-400 mb-5">คุมอารมณ์ คุมพอร์ต ทำอย่างไรไม่ให้ Overtrade และวิธีสร้างวินัยเหล็กในการเทรดระยะยาว</p>
+                        <button class="w-full py-3 bg-white/10 hover:bg-primary text-white rounded-xl transition font-medium border border-white/10 group-hover:border-primary">
+                            เริ่มอ่านเลย <i class="fa-solid fa-arrow-right ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Book 3 (VIP) -->
+                <div class="glass-card rounded-2xl overflow-hidden group hover:-translate-y-2 transition duration-300 relative border-gold/30 shadow-[0_0_20px_rgba(245,158,11,0.1)] hover:shadow-[0_0_30px_rgba(245,158,11,0.3)]">
+                    <div class="h-48 bg-gradient-to-br from-gray-900 to-black relative flex items-center justify-center">
+                        <i class="fa-solid fa-gem text-5xl text-gold opacity-20 absolute"></i>
+                        <div class="absolute inset-0 bg-gradient-to-t from-card to-transparent"></div>
+                        <div class="absolute top-3 right-3 bg-gold text-dark text-xs font-bold px-3 py-1 rounded-full shadow-lg"><i class="fa-solid fa-lock text-xs"></i> VIP Only</div>
+                        <div class="absolute bottom-4 left-4">
+                            <h3 class="text-2xl font-bold text-gold drop-shadow-lg">Sniper Entry & Scalping</h3>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <p class="text-sm text-gray-400 mb-5">สูตรลับการเข้าเทรดสั้นทำกำไรรายวัน M1-M5 พร้อมระบบตั้งเตือน Signal แม่นยำ 85%</p>
+                        <button class="w-full py-3 bg-gradient-to-r from-yellow-600 to-gold hover:from-gold hover:to-yellow-400 text-dark rounded-xl transition font-bold shadow-[0_0_15px_rgba(245,158,11,0.4)]">
+                            อัปเกรด VIP เพื่อปลดล็อก
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SECTION 4: VIP / DISCORD ================= -->
+        <section id="vip" class="min-h-[80vh] py-20 px-4 md:px-6 max-w-5xl mx-auto reveal pt-24 mt-10">
+            <div class="bg-gradient-to-br from-[#1e1b4b] via-[#311b92] to-[#0f172a] rounded-[2rem] p-8 md:p-14 text-white shadow-[0_0_40px_rgba(88,101,242,0.2)] relative overflow-hidden border border-[#5865F2]/30">
+                
+                <!-- Discord Decorative shapes -->
+                <div class="absolute top-0 right-0 w-80 h-80 bg-[#5865F2]/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                <div class="absolute bottom-0 left-0 w-64 h-64 bg-gold/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+
+                <div class="relative z-10 text-center">
+                    <div class="inline-flex items-center justify-center w-24 h-24 bg-white/5 rounded-3xl backdrop-blur-md mb-8 border border-white/10 shadow-[0_0_30px_rgba(88,101,242,0.4)]">
+                        <i class="fa-brands fa-discord text-6xl text-[#5865F2]"></i>
+                    </div>
+                    <h1 class="text-4xl md:text-5xl font-black mb-6">Exclusive <span class="text-gold">Discord</span> Community</h1>
+                    <p class="text-lg text-gray-300 mb-12 max-w-2xl mx-auto leading-relaxed">ยกระดับการเทรดของคุณให้กลายเป็นมืออาชีพ รับแผนเทรดสดรายวัน Signal แม่นยำ และปรึกษาโค้ชส่วนตัวแบบ Exclusive</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 text-left">
+                        <div class="bg-black/20 backdrop-blur-md p-6 rounded-2xl border border-white/5 hover:border-[#5865F2]/50 transition">
+                            <div class="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center mb-4 text-red-400 text-xl"><i class="fa-solid fa-bullseye"></i></div>
+                            <h3 class="font-bold text-xl mb-2">Live Signals</h3>
+                            <p class="text-sm text-gray-400">บอกจุดเข้า จุดออก TP/SL แบบ Real-time พร้อมเหตุผล</p>
+                        </div>
+                        <div class="bg-black/20 backdrop-blur-md p-6 rounded-2xl border border-white/5 hover:border-[#5865F2]/50 transition">
+                            <div class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center mb-4 text-blue-400 text-xl"><i class="fa-solid fa-video"></i></div>
+                            <h3 class="font-bold text-xl mb-2">Live Trade</h3>
+                            <p class="text-sm text-gray-400">พาเทรดชนข่าวใหญ่ Non-farm, CPI พร้อมวิเคราะห์กราฟทุกสัปดาห์</p>
+                        </div>
+                        <div class="bg-black/20 backdrop-blur-md p-6 rounded-2xl border border-white/5 hover:border-[#5865F2]/50 transition">
+                            <div class="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center mb-4 text-green-400 text-xl"><i class="fa-solid fa-user-tie"></i></div>
+                            <h3 class="font-bold text-xl mb-2">Mentorship</h3>
+                            <p class="text-sm text-gray-400">ส่งการบ้านให้โค้ชตรวจ เพื่อปรับปรุงจุดอ่อนในระบบเทรดของคุณ</p>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-5 justify-center">
+                        <button class="px-8 py-4 bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-xl font-bold text-lg transition flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(88,101,242,0.5)] transform hover:scale-105">
+                            <i class="fa-brands fa-discord text-xl"></i> เข้าร่วม Discord ทันที
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
     </main>
 
     <!-- ================= LOGIN / PROFILE MODAL ================= -->
-    <div id="loginModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-card w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700 transform transition-all">
-            <div class="p-6 text-center border-b border-gray-100 dark:border-gray-800 relative">
-                <h2 class="text-2xl font-bold">ตั้งค่าโปรไฟล์เฟี้ยวๆ</h2>
-                <button onclick="closeLoginModal()" class="absolute top-6 right-6 text-gray-400 hover:text-red-500">
+    <div id="loginModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-card w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-white/10 transform scale-95 transition-transform duration-300" id="loginModalContent">
+            <div class="p-6 text-center border-b border-white/5 relative bg-gradient-to-b from-white/5 to-transparent">
+                <h2 class="text-2xl font-bold text-white"><i class="fa-solid fa-user-astronaut text-primary mr-2"></i> ตั้งค่าโปรไฟล์เทรดเดอร์</h2>
+                <button id="closeModalBtn" class="absolute top-6 right-6 text-gray-400 hover:text-red-500 transition">
                     <i class="fa-solid fa-xmark text-xl"></i>
                 </button>
             </div>
             
             <div class="p-6">
                 <!-- Avatar Selection -->
-                <p class="text-sm font-medium mb-3 text-gray-600 dark:text-gray-300">เลือกรูปประจำตัว:</p>
+                <p class="text-sm font-medium mb-3 text-gray-400">เลือกอวตารนำโชค:</p>
                 <div class="flex flex-wrap justify-center gap-4 mb-6">
-                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" class="avatar-option w-16 h-16 rounded-full cursor-pointer bg-blue-100 transition hover:scale-110" onclick="selectAvatar(this, 'Felix')">
-                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka" class="avatar-option w-16 h-16 rounded-full cursor-pointer bg-pink-100 transition hover:scale-110" onclick="selectAvatar(this, 'Aneka')">
-                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Leo" class="avatar-option w-16 h-16 rounded-full cursor-pointer bg-yellow-100 transition hover:scale-110" onclick="selectAvatar(this, 'Leo')">
-                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Max" class="avatar-option w-16 h-16 rounded-full cursor-pointer bg-green-100 transition hover:scale-110" onclick="selectAvatar(this, 'Max')">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" class="avatar-option w-16 h-16 rounded-full cursor-pointer bg-blue-900/50 border-2 border-transparent transition hover:scale-110" data-seed="Felix">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka" class="avatar-option w-16 h-16 rounded-full cursor-pointer bg-pink-900/50 border-2 border-transparent transition hover:scale-110" data-seed="Aneka">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Leo" class="avatar-option w-16 h-16 rounded-full cursor-pointer bg-yellow-900/50 border-2 border-transparent transition hover:scale-110" data-seed="Leo">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Max" class="avatar-option w-16 h-16 rounded-full cursor-pointer bg-green-900/50 border-2 border-transparent transition hover:scale-110" data-seed="Max">
                 </div>
 
                 <!-- Username Input -->
                 <div class="mb-6">
-                    <label class="block text-sm font-medium mb-1 text-gray-600 dark:text-gray-300">ชื่อนักเทรด (Trader Name)</label>
-                    <input type="text" id="usernameInput" class="w-full px-4 py-3 bg-gray-50 dark:bg-dark border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary focus:outline-none text-gray-900 dark:text-white" placeholder="เช่น FX_Sniper">
+                    <label class="block text-sm font-medium mb-2 text-gray-400">นามแฝง (Trader Name)</label>
+                    <input type="text" id="usernameInput" class="w-full px-4 py-3 bg-dark border border-gray-700 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none text-white placeholder-gray-600 transition" placeholder="เช่น FX_Sniper">
                 </div>
 
-                <button onclick="saveProfile()" class="w-full py-3 bg-gradient-to-r from-primary to-secondary hover:from-blue-600 hover:to-green-600 text-white font-bold rounded-xl shadow-lg transition">
-                    บันทึกโปรไฟล์ เริ่มลุย!
+                <button id="saveProfileBtn" class="w-full py-4 bg-gradient-to-r from-primary to-neonBlue hover:from-blue-600 hover:to-blue-400 text-dark font-black rounded-xl shadow-[0_0_15px_rgba(0,243,255,0.4)] transition transform hover:-translate-y-1">
+                    <i class="fa-solid fa-cloud-arrow-up mr-1"></i> บันทึกข้อมูล (Save to Cloud)
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
+    <!-- Scripts (UI & Logic) -->
     <script>
-        // --- State Management ---
-        const state = {
-            view: 'dashboard',
-            theme: 'dark',
-            profile: {
-                name: 'เข้าสู่ระบบ',
-                avatarSeed: 'Guest'
-            },
-            chartZonesVisible: true
-        };
+        // ================= UI & SCROLL SPY LOGIC =================
+        const sections = document.querySelectorAll("section");
+        const navLinks = document.querySelectorAll(".nav-link");
 
-        // --- Navigation Logic ---
-        function switchView(viewId) {
-            // Hide all
-            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
-            // Show target
-            document.getElementById(viewId).classList.add('active');
-            state.view = viewId;
-            
-            // Re-render chart if switching to dashboard to fix size issues
-            if(viewId === 'dashboard' && chart) {
-                setTimeout(() => chart.timeScale().fitContent(), 100);
-            }
-        }
+        // Scroll Spy Function
+        window.addEventListener("scroll", () => {
+            let current = "";
+            sections.forEach((section) => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (scrollY >= sectionTop - 200) {
+                    current = section.getAttribute("id");
+                }
+            });
 
-        function toggleMobileMenu() {
-            const menu = document.getElementById('mobileMenu');
-            menu.classList.toggle('hidden');
-        }
+            navLinks.forEach((link) => {
+                link.classList.remove("active", "text-neonBlue");
+                link.classList.remove("text-yellow-300"); // for VIP
+                if (link.dataset.target === current) {
+                    link.classList.add("active");
+                    if(current === 'vip') {
+                         link.classList.add("text-yellow-300");
+                    } else {
+                         link.classList.add("text-neonBlue");
+                    }
+                }
+            });
 
-        // --- Theme Toggle Logic ---
-        const themeBtn = document.getElementById('themeToggle');
-        const html = document.documentElement;
-
-        themeBtn.addEventListener('click', () => {
-            html.classList.toggle('dark');
-            state.theme = html.classList.contains('dark') ? 'dark' : 'light';
-            
-            // Update chart theme
-            if(chart) {
-                chart.applyOptions(getChartThemeOptions(state.theme));
-            }
+            // Reveal Animation on scroll
+            document.querySelectorAll('.reveal').forEach(el => {
+                const windowHeight = window.innerHeight;
+                const elementTop = el.getBoundingClientRect().top;
+                if (elementTop < windowHeight - 100) {
+                    el.classList.add('active');
+                }
+            });
         });
 
-        // --- Login & Profile Logic ---
+        // Trigger reveal on load
+        setTimeout(() => {
+            document.querySelectorAll('.reveal')[0]?.classList.add('active');
+        }, 100);
+
+        // Styling for ALL IN radio
+        document.querySelectorAll('input[name="riskLevel"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const labelAllIn = document.getElementById('labelAllIn');
+                if(e.target.value === "100") {
+                    labelAllIn.classList.add('all-in-active');
+                } else {
+                    labelAllIn.classList.remove('all-in-active');
+                }
+            });
+        });
+
+        // Modal Logic
+        const modal = document.getElementById('loginModal');
+        const modalContent = document.getElementById('loginModalContent');
+        
+        document.getElementById('userProfileBtn').addEventListener('click', () => {
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modalContent.classList.remove('scale-95');
+            }, 10);
+        });
+
+        document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+
+        function closeModal() {
+            modal.classList.add('opacity-0');
+            modalContent.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        // Avatar Selection UI
         let selectedAvatarSeed = 'Guest';
+        document.querySelectorAll('.avatar-option').forEach(img => {
+            img.addEventListener('click', (e) => {
+                document.querySelectorAll('.avatar-option').forEach(el => {
+                    el.style.borderColor = 'transparent';
+                    el.style.transform = 'scale(1)';
+                });
+                e.target.style.borderColor = '#00f3ff';
+                e.target.style.transform = 'scale(1.15)';
+                selectedAvatarSeed = e.target.dataset.seed;
+            });
+        });
 
-        function openLoginModal() {
-            document.getElementById('loginModal').classList.remove('hidden');
-        }
-
-        function closeLoginModal() {
-            document.getElementById('loginModal').classList.add('hidden');
-        }
-
-        function selectAvatar(element, seed) {
-            document.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected'));
-            element.classList.add('selected');
-            selectedAvatarSeed = seed;
-        }
-
-        function saveProfile() {
-            const name = document.getElementById('usernameInput').value || 'Trader';
-            state.profile.name = name;
-            state.profile.avatarSeed = selectedAvatarSeed;
-
-            document.getElementById('displayUsername').innerText = name;
-            document.getElementById('displayAvatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedAvatarSeed}`;
-            
-            closeLoginModal();
-        }
-
-        // --- Lot Size Calculator Logic ---
-        function calculateLot() {
+        // ================= CALCULATOR LOGIC =================
+        document.getElementById('btnCalculate').addEventListener('click', () => {
             const balance = parseFloat(document.getElementById('calcBalance').value);
             const slPips = parseFloat(document.getElementById('calcSL').value);
             const riskPercent = parseFloat(document.querySelector('input[name="riskLevel"]:checked').value);
 
             if(!balance || !slPips || balance <= 0 || slPips <= 0) {
-                alert('กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง');
+                alert('กรุณากรอกข้อมูลเงินทุนและ SL ให้ถูกต้อง');
                 return;
             }
 
-            // Calculation Logic (Standard Lot EURUSD/XAUUSD approximation)
-            // 1 Standard Lot = $10 per pip (if point, 1 point = $1)
-            // Assuming input SL is in points for Gold (e.g., 300 points = 30 pips)
-            const riskAmount = balance * (riskPercent / 100);
-            
-            // Formula: Lot = RiskAmount / (SL_Points * PipValuePerPoint)
-            // Assuming PipValuePerPoint for Gold standard lot is $1
-            let lotSize = riskAmount / (slPips * 1);
-            
-            // Round to 2 decimals
+            let riskAmount = 0;
+            let lotSize = 0;
+
+            // สายซิ่ง All IN (100% Risk - หรือสามารถตั้งให้ Overleverage ได้)
+            if(riskPercent === 100) {
+                // ยอมเสียหมดพอร์ต
+                riskAmount = balance; 
+                // Formula: Lot = RiskAmount / (SL * PipValue) => Assuming standard lot 1 point = $1
+                lotSize = riskAmount / (slPips * 1);
+            } else {
+                // ปกติ (2%, 5%)
+                riskAmount = balance * (riskPercent / 100);
+                lotSize = riskAmount / (slPips * 1);
+            }
+
             lotSize = Math.max(0.01, Math.round(lotSize * 100) / 100);
 
-            document.getElementById('resultLot').innerText = lotSize.toFixed(2);
-            document.getElementById('resultRiskAmount').innerText = riskAmount.toFixed(2);
-            document.getElementById('calcResult').classList.remove('hidden');
+            // Animate Numbers
+            animateValue("resultLot", 0, lotSize, 1000, true);
+            animateValue("resultRiskAmount", 0, riskAmount, 1000, false);
             
-            // Optional: Animation effect
             const resultBox = document.getElementById('calcResult');
+            resultBox.classList.remove('hidden');
+            resultBox.classList.remove('animate-pulse');
+            void resultBox.offsetWidth; // trigger reflow
             resultBox.classList.add('animate-pulse');
-            setTimeout(() => resultBox.classList.remove('animate-pulse'), 500);
+            setTimeout(() => resultBox.classList.remove('animate-pulse'), 800);
+
+            // Save to Firebase (if authenticated)
+            saveCalculationToCloud(balance, slPips, riskPercent, lotSize);
+        });
+
+        function animateValue(id, start, end, duration, isFloat) {
+            let obj = document.getElementById(id);
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                let current = progress * (end - start) + start;
+                obj.innerHTML = isFloat ? current.toFixed(2) : Math.floor(current);
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
         }
 
-        // ================= TRADINGVIEW LIGHTWEIGHT CHARTS LOGIC =================
+        // ================= TRADINGVIEW CHART =================
         let chart;
         let candlestickSeries;
         let fvgLines = [];
         let demandLines = [];
 
-        function getChartThemeOptions(theme) {
-            const isDark = theme === 'dark';
-            return {
-                layout: {
-                    background: { type: 'solid', color: isDark ? '#131722' : '#ffffff' },
-                    textColor: isDark ? '#d1d4dc' : '#1f2937',
-                },
-                grid: {
-                    vertLines: { color: isDark ? '#2b2b43' : '#e5e7eb' },
-                    horzLines: { color: isDark ? '#2b2b43' : '#e5e7eb' },
-                },
-            };
-        }
-
         function initChart() {
             const chartContainer = document.getElementById('tvchart');
-            
+            // Ensure container has height
+            if(!chartContainer.clientHeight) chartContainer.style.height = '400px';
+
             chart = LightweightCharts.createChart(chartContainer, {
                 width: chartContainer.clientWidth,
-                height: chartContainer.clientHeight || 400,
-                ...getChartThemeOptions(state.theme),
-                crosshair: {
-                    mode: LightweightCharts.CrosshairMode.Normal,
-                },
-                rightPriceScale: {
-                    borderColor: state.theme === 'dark' ? '#2b2b43' : '#e5e7eb',
-                },
-                timeScale: {
-                    borderColor: state.theme === 'dark' ? '#2b2b43' : '#e5e7eb',
-                    timeVisible: true,
-                },
+                height: chartContainer.clientHeight,
+                layout: { background: { type: 'solid', color: 'transparent' }, textColor: '#d1d4dc' },
+                grid: { vertLines: { color: 'rgba(255, 255, 255, 0.05)' }, horzLines: { color: 'rgba(255, 255, 255, 0.05)' } },
+                crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+                rightPriceScale: { borderColor: 'rgba(255, 255, 255, 0.1)' },
+                timeScale: { borderColor: 'rgba(255, 255, 255, 0.1)', timeVisible: true },
             });
 
             candlestickSeries = chart.addCandlestickSeries({
-                upColor: '#26a69a',
-                downColor: '#ef5350',
-                borderVisible: false,
-                wickUpColor: '#26a69a',
-                wickDownColor: '#ef5350'
+                upColor: '#10b981', downColor: '#ef4444', borderVisible: false, wickUpColor: '#10b981', wickDownColor: '#ef4444'
             });
 
-            // Generate Mock Data for XAUUSD
             const data = generateMockData();
             candlestickSeries.setData(data);
-
-            // Add Zones
             createTradingPlanZones(data);
 
-            // Resize observer
             new ResizeObserver(entries => {
-                if (entries.length === 0 || entries[0].target !== chartContainer) { return; }
+                if (entries.length === 0 || entries[0].target !== chartContainer) return;
                 const newRect = entries[0].contentRect;
                 chart.applyOptions({ height: newRect.height, width: newRect.width });
             }).observe(chartContainer);
@@ -532,119 +704,175 @@
 
         function generateMockData() {
             const res = [];
-            let time = Math.floor(Date.now() / 1000) - 100 * 86400; // Start 100 days ago
-            let open = 2000.00;
-            
+            let time = Math.floor(Date.now() / 1000) - 100 * 86400; 
+            let open = 2300.00;
             for (let i = 0; i < 100; i++) {
-                const volatility = 15; // $15 move max
-                const close = open + (Math.random() - 0.45) * volatility; // slight uptrend bias
-                const high = Math.max(open, close) + Math.random() * 5;
-                const low = Math.min(open, close) - Math.random() * 5;
-                
-                res.push({
-                    time: time,
-                    open: parseFloat(open.toFixed(2)),
-                    high: parseFloat(high.toFixed(2)),
-                    low: parseFloat(low.toFixed(2)),
-                    close: parseFloat(close.toFixed(2))
-                });
-                
-                open = close;
-                time += 86400; // Next day
+                const close = open + (Math.random() - 0.45) * 20; 
+                const high = Math.max(open, close) + Math.random() * 8;
+                const low = Math.min(open, close) - Math.random() * 8;
+                res.push({ time: time, open: open, high: high, low: low, close: close });
+                open = close; time += 86400; 
             }
             return res;
         }
 
         function createTradingPlanZones(data) {
-            // Get latest price to position zones reasonably
             const lastPrice = data[data.length - 1].close;
-
-            // 1. FVG Zone (Gap above current price)
-            const fvgTop = lastPrice + 15;
-            const fvgBottom = lastPrice + 10;
+            // FVG
+            fvgLines.push(candlestickSeries.createPriceLine({ price: lastPrice + 15, color: '#ef4444', lineWidth: 2, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: 'FVG (Sell)' }));
+            fvgLines.push(candlestickSeries.createPriceLine({ price: lastPrice + 10, color: '#ef4444', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Solid }));
+            // Demand
+            demandLines.push(candlestickSeries.createPriceLine({ price: lastPrice - 12, color: '#10b981', lineWidth: 2, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: 'Demand (Buy)' }));
+            demandLines.push(candlestickSeries.createPriceLine({ price: lastPrice - 18, color: '#10b981', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Solid }));
             
-            fvgLines.push(candlestickSeries.createPriceLine({
-                price: fvgTop,
-                color: '#ef5350',
-                lineWidth: 2,
-                lineStyle: LightweightCharts.LineStyle.Dashed,
-                axisLabelVisible: true,
-                title: 'FVG (Sell Zone)',
-            }));
-            fvgLines.push(candlestickSeries.createPriceLine({
-                price: fvgBottom,
-                color: '#ef5350',
-                lineWidth: 1,
-                lineStyle: LightweightCharts.LineStyle.Solid,
-            }));
-
-            // 2. Demand Zone (Block below current price)
-            const demTop = lastPrice - 12;
-            const demBottom = lastPrice - 18;
-
-            demandLines.push(candlestickSeries.createPriceLine({
-                price: demTop,
-                color: '#26a69a',
-                lineWidth: 2,
-                lineStyle: LightweightCharts.LineStyle.Dashed,
-                axisLabelVisible: true,
-                title: 'Demand Zone (Buy)',
-            }));
-            demandLines.push(candlestickSeries.createPriceLine({
-                price: demBottom,
-                color: '#26a69a',
-                lineWidth: 1,
-                lineStyle: LightweightCharts.LineStyle.Solid,
-            }));
-
-            // Add Markers (Signals)
             candlestickSeries.setMarkers([
-                {
-                    time: data[data.length - 5].time,
-                    position: 'belowBar',
-                    color: '#2196F3',
-                    shape: 'arrowUp',
-                    text: 'CHoCH',
-                },
-                {
-                    time: data[data.length - 1].time,
-                    position: 'aboveBar',
-                    color: '#ff9800',
-                    shape: 'circle',
-                    text: 'Wait for entry',
-                }
+                { time: data[data.length - 10].time, position: 'belowBar', color: '#3b82f6', shape: 'arrowUp', text: 'BOS' },
+                { time: data[data.length - 1].time, position: 'aboveBar', color: '#f59e0b', shape: 'circle', text: 'Wait...' }
             ]);
         }
 
-        // Toggle Zones Logic
         document.getElementById('togglePlan').addEventListener('change', (e) => {
-            const isVisible = e.target.checked;
-            
-            // In Lightweight Charts, you can't strictly "hide" a priceline, 
-            // so we remove them and re-add, or change their color to transparent.
-            // For simplicity in this demo, we'll change color transparency.
-            
-            const fvgColor = isVisible ? '#ef5350' : 'rgba(0,0,0,0)';
-            const demColor = isVisible ? '#26a69a' : 'rgba(0,0,0,0)';
-            const labelVis = isVisible;
-
-            fvgLines[0].applyOptions({ color: fvgColor, axisLabelVisible: labelVis });
-            fvgLines[1].applyOptions({ color: fvgColor });
-            
-            demandLines[0].applyOptions({ color: demColor, axisLabelVisible: labelVis });
-            demandLines[1].applyOptions({ color: demColor });
+            const isVis = e.target.checked;
+            fvgLines[0].applyOptions({ color: isVis ? '#ef4444' : 'rgba(0,0,0,0)', axisLabelVisible: isVis });
+            fvgLines[1].applyOptions({ color: isVis ? '#ef4444' : 'rgba(0,0,0,0)' });
+            demandLines[0].applyOptions({ color: isVis ? '#10b981' : 'rgba(0,0,0,0)', axisLabelVisible: isVis });
+            demandLines[1].applyOptions({ color: isVis ? '#10b981' : 'rgba(0,0,0,0)' });
         });
 
-        // Initialize App
         window.addEventListener('DOMContentLoaded', () => {
-            // Make sure container has height before init
-            const chartDiv = document.getElementById('tvchart');
-            chartDiv.style.minHeight = "400px";
-            
-            initChart();
+            setTimeout(initChart, 100); // slight delay to ensure DOM is ready for rendering
         });
+    </script>
 
+    <!-- ================= FIREBASE INTEGRATION LOGIC ================= -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        let db, auth, currentUser, appId;
+
+        async function initFirebase() {
+            try {
+                // Setup config from environment
+                const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+                appId = typeof __app_id !== 'undefined' ? __app_id : 'fxpro-demo-app';
+
+                if (!firebaseConfig) {
+                    console.log("Firebase config not found. Running in UI-only mode.");
+                    return;
+                }
+
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                // RULE 3: Auth Before Queries
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        currentUser = user;
+                        console.log("Authenticated as:", user.uid);
+                        loadUserProfile();
+                    }
+                });
+            } catch (error) {
+                console.error("Firebase Init Error:", error);
+            }
+        }
+
+        // --- Save / Load Profile ---
+        async function saveProfileData() {
+            if (!currentUser || !db) return;
+            const name = document.getElementById('usernameInput').value || 'Trader_' + currentUser.uid.substring(0,4);
+            
+            const profileData = {
+                name: name,
+                avatar: window.selectedAvatarSeed || 'Guest',
+                updatedAt: new Date().toISOString()
+            };
+
+            try {
+                // RULE 1: Strict Paths for Private Data
+                const userDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'data');
+                await setDoc(userDocRef, profileData);
+                
+                // Update UI
+                updateProfileUI(profileData.name, profileData.avatar);
+                window.closeModal(); // Call global function
+                
+                // Optional: Show success state on button
+                const btn = document.getElementById('saveProfileBtn');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> บันทึกสำเร็จ!';
+                btn.classList.add('bg-green-500');
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.classList.remove('bg-green-500');
+                }, 2000);
+
+            } catch (err) {
+                console.error("Error saving profile:", err);
+            }
+        }
+
+        async function loadUserProfile() {
+            if (!currentUser || !db) return;
+            try {
+                const userDocRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'data');
+                const docSnap = await getDoc(userDocRef);
+                
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    updateProfileUI(data.name, data.avatar);
+                    // Pre-fill input
+                    document.getElementById('usernameInput').value = data.name;
+                    window.selectedAvatarSeed = data.avatar;
+                } else {
+                    updateProfileUI('Trader (Guest)', 'Guest');
+                }
+            } catch (err) {
+                console.error("Error loading profile:", err);
+            }
+        }
+
+        function updateProfileUI(name, avatar) {
+            document.getElementById('displayUsername').innerText = name;
+            document.getElementById('displayAvatar').src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${avatar}`;
+        }
+
+        // Expose function to global scope for the button click
+        document.getElementById('saveProfileBtn').addEventListener('click', saveProfileData);
+
+        // --- Save Calculation History (Optional Feature) ---
+        window.saveCalculationToCloud = async function(balance, sl, risk, lot) {
+            if (!currentUser || !db) return;
+            try {
+                // RULE 1: Strict Path
+                const historyRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'calcHistory');
+                await addDoc(historyRef, {
+                    balance: balance,
+                    stopLoss: sl,
+                    riskPercent: risk,
+                    lotSize: lot,
+                    timestamp: new Date().toISOString()
+                });
+                console.log("Saved calculation to history.");
+            } catch (err) {
+                console.error("Failed to save history:", err);
+            }
+        }
+
+        // Start Firebase
+        initFirebase();
     </script>
 </body>
 </html>
 
+
+```
