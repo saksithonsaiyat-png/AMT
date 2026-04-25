@@ -3,20 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Impact Trading - Realtime Platform</title>
-    <!-- Tailwind CSS -->
+    <title>Impact Trading - Next Gen Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
     
-    <!-- ========================================== -->
-    <!-- FIREBASE SDK -->
-    <!-- ========================================== -->
+    <!-- FIREBASE SDK (Firestore + Storage + Auth) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        // นำเข้า Firebase Storage สำหรับอัปโหลดไฟล์
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyA7sVZ-RY491b0UFvdQa4YGp9DuB26m3As",
@@ -29,8 +26,10 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const storage = getStorage(app);
 
-        window.firebaseTools = { db, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, increment };
+        // รวมเครื่องมือไว้ใช้ในไฟล์
+        window.fb = { db, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, setDoc, deleteDoc, storage, ref, uploadBytes, getDownloadURL };
     </script>
 
     <script>
@@ -38,13 +37,9 @@
             theme: {
                 extend: {
                     fontFamily: { prompt: ['Prompt', 'sans-serif'] },
-                    colors: {
-                        neon: { 400: '#22d3ee', 500: '#06b6d4', 600: '#0891b2' }, // Cyan
-                        accent: { 500: '#8b5cf6', 600: '#7c3aed' }, // Purple
-                        dark: { 800: '#18181b', 900: '#09090b', 950: '#000000' } // Zinc dark
-                    },
-                    animation: { 'marquee': 'marquee 25s linear infinite', 'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite' },
-                    keyframes: { marquee: { '0%': { transform: 'translateX(100%)' }, '100%': { transform: 'translateX(-100%)' } } }
+                    colors: { neon: { 400: '#22d3ee', 500: '#06b6d4', 600: '#0891b2' }, accent: { 500: '#8b5cf6', 600: '#7c3aed' }, dark: { 800: '#18181b', 900: '#09090b', 950: '#000000' } },
+                    animation: { marquee: 'marquee 25s linear infinite', float: 'float 6s ease-in-out infinite' },
+                    keyframes: { marquee: { '0%': { transform: 'translateX(100%)' }, '100%': { transform: 'translateX(-100%)' } }, float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-10px)' } } }
                 }
             }
         }
@@ -56,110 +51,116 @@
         ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #06b6d4; }
         
-        .glass-panel {
-            background: rgba(24, 24, 27, 0.6);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(6, 182, 212, 0.15);
-        }
-        .neon-border { border: 1px solid rgba(6, 182, 212, 0.4); box-shadow: 0 0 10px rgba(6, 182, 212, 0.1); }
-        .neon-text { text-shadow: 0 0 10px rgba(6, 182, 212, 0.5); }
+        .glass-panel { background: rgba(24, 24, 27, 0.6); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(6, 182, 212, 0.15); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .glass-panel:hover { border-color: rgba(6, 182, 212, 0.4); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5); }
+        .neon-text { text-shadow: 0 0 15px rgba(6, 182, 212, 0.6); }
         
-        .fade-in { animation: fadeIn 0.3s ease-in-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         
-        .toast-enter { transform: translateX(100%); opacity: 0; }
-        .toast-enter-active { transform: translateX(0); opacity: 1; transition: all 0.3s ease-out; }
-        .toast-exit { transform: translateX(100%); opacity: 0; transition: all 0.3s ease-in; }
+        .toast-enter { transform: translateX(100%); opacity: 0; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .toast-enter-active { transform: translateX(0); opacity: 1; }
+        .toast-exit { transform: translateX(100%); opacity: 0; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
 
         .ticker-wrap { width: 100%; overflow: hidden; background-color: #000; border-bottom: 1px solid #27272a; height: 32px; display: flex; align-items: center; }
         .ticker-move { display: inline-block; white-space: nowrap; padding-right: 100%; box-sizing: content-box; }
-        .ticker-item { display: inline-block; padding: 0 2rem; font-size: 0.8rem; color: #a1a1aa; }
+        .ticker-item { display: inline-block; padding: 0 2rem; font-size: 0.8rem; color: #a1a1aa; transition: color 0.3s; }
+        .ticker-item:hover { color: #fff; }
         .ticker-item span.up { color: #10b981; }
         .ticker-item span.down { color: #ef4444; }
+
+        /* Custom File Input Styling */
+        input[type="file"]::file-selector-button { background: #18181b; border: 1px solid #27272a; color: #06b6d4; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer; transition: all 0.3s; margin-right: 10px; }
+        input[type="file"]::file-selector-button:hover { background: #06b6d4; color: #000; }
     </style>
 </head>
 <body class="antialiased selection:bg-neon-500 selection:text-black">
 
-    <!-- Toast Container -->
     <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3 pointer-events-none"></div>
 
     <!-- ================= LOGIN VIEW ================= -->
-    <div id="login-view" class="min-h-screen flex items-center justify-center bg-[url('https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center relative">
+    <div id="login-view" class="min-h-screen flex items-center justify-center bg-[url('https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center relative transition-opacity duration-1000">
         <div class="absolute inset-0 bg-dark-900/90 backdrop-blur-md"></div>
         
-        <div class="glass-panel p-8 md:p-10 rounded-2xl shadow-2xl z-10 w-full max-w-sm mx-4 relative overflow-hidden fade-in border-t-4 border-t-neon-500">
-            <div class="text-center mb-8">
-                <div id="logo-trigger" class="inline-flex items-center justify-center w-16 h-16 rounded-xl bg-dark-800 border border-neon-500/50 text-neon-500 mb-4 cursor-pointer select-none transition-transform active:scale-95 shadow-[0_0_20px_rgba(6,182,212,0.3)]">
-                    <i data-lucide="zap" class="w-8 h-8"></i>
+        <div class="glass-panel p-8 md:p-10 rounded-2xl shadow-[0_0_30px_rgba(0,0,0,0.8)] z-10 w-full max-w-sm mx-4 relative overflow-hidden fade-in border-t-4 border-t-neon-500 transform transition-transform duration-500 hover:scale-[1.01]">
+            <div class="text-center mb-8 flex flex-col items-center">
+                <!-- ============================================== -->
+                <!-- จุดที่ให้เปลี่ยนรูปภาพ im1.jpg ตามความต้องการ -->
+                <!-- ============================================== -->
+                <div class="relative group cursor-pointer mb-4 animate-float" id="logo-trigger">
+                    <div class="absolute inset-0 bg-neon-500 rounded-2xl blur-xl opacity-30 group-hover:opacity-60 transition-opacity duration-500"></div>
+                    <!-- ใส่รูป im1.jpg ไว้ที่ src (ถ้าหาไม่เจอจะแสดงรูป fallback แทน) -->
+                    <img src="im1.jpg" onerror="this.src='https://ui-avatars.com/api/?name=IM&background=06b6d4&color=000'" alt="Logo" class="relative w-20 h-20 rounded-2xl object-cover border-2 border-neon-500/50 shadow-xl transition-transform duration-300 group-hover:scale-105 group-active:scale-95">
                 </div>
-                <h1 class="text-3xl font-black text-white tracking-wider italic">IMPACT<span class="text-neon-500 neon-text">TRADING</span></h1>
-                <p class="text-gray-400 mt-1 text-xs tracking-widest uppercase">Next-Gen Platform</p>
+                
+                <h1 class="text-3xl font-black text-white tracking-wider italic mt-2 transition-all duration-300 hover:text-neon-400">IMPACT<span class="text-neon-500 neon-text">TRADING</span></h1>
+                <p class="text-gray-400 mt-1 text-[10px] tracking-widest uppercase">Next-Gen Platform</p>
             </div>
 
             <form id="login-form" class="space-y-5">
-                <div>
-                    <label class="block text-xs font-semibold text-gray-400 mb-1 uppercase tracking-wider">ชื่อผู้ใช้งาน (Username)</label>
+                <div class="group">
+                    <label class="block text-[10px] font-bold text-gray-400 mb-1 uppercase tracking-wider group-focus-within:text-neon-500 transition-colors">ชื่อผู้ใช้งาน</label>
                     <div class="relative">
-                        <i data-lucide="user" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500"></i>
-                        <input type="text" id="login-username" class="w-full bg-dark-950 border border-gray-800 rounded-lg py-3 pl-10 pr-4 text-white text-sm focus:outline-none focus:border-neon-500 transition-colors" placeholder="ใส่ชื่อของคุณ" required>
+                        <i data-lucide="user" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-neon-500 transition-colors"></i>
+                        <input type="text" id="login-username" class="w-full bg-dark-950 border border-gray-800 rounded-lg py-3 pl-10 pr-4 text-white text-sm focus:outline-none focus:border-neon-500 transition-all duration-300 shadow-inner" placeholder="ใส่ชื่อของคุณ" required>
                     </div>
                 </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-400 mb-1 uppercase tracking-wider">รหัสผ่าน (Password)</label>
+                <div class="group">
+                    <label class="block text-[10px] font-bold text-gray-400 mb-1 uppercase tracking-wider group-focus-within:text-neon-500 transition-colors">รหัสผ่าน</label>
                     <div class="relative">
-                        <i data-lucide="lock" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500"></i>
-                        <input type="password" id="login-password" class="w-full bg-dark-950 border border-gray-800 rounded-lg py-3 pl-10 pr-4 text-white text-sm focus:outline-none focus:border-neon-500 transition-colors" placeholder="••••••••" required>
+                        <i data-lucide="lock" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-neon-500 transition-colors"></i>
+                        <input type="password" id="login-password" class="w-full bg-dark-950 border border-gray-800 rounded-lg py-3 pl-10 pr-4 text-white text-sm focus:outline-none focus:border-neon-500 transition-all duration-300 shadow-inner" placeholder="••••••••" required>
                     </div>
                 </div>
 
-                <!-- Admin Secret Area -->
-                <div id="admin-secret-area" class="hidden pt-4 border-t border-gray-800 mt-4">
-                    <p class="text-xs text-accent-500 mb-2 font-bold flex items-center"><i data-lucide="terminal" class="w-3 h-3 mr-1"></i> ADMIN OVERRIDE</p>
+                <div id="admin-secret-area" class="hidden pt-4 border-t border-gray-800 mt-4 fade-in">
+                    <p class="text-[10px] text-accent-500 mb-2 font-bold flex items-center tracking-wider"><i data-lucide="terminal" class="w-3 h-3 mr-1"></i> ADMIN OVERRIDE</p>
                     <div class="relative">
                         <i data-lucide="key" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-accent-500"></i>
                         <input type="password" id="admin-key" class="w-full bg-dark-950 border border-accent-500/50 rounded-lg py-3 pl-10 pr-4 text-white text-sm focus:outline-none focus:border-accent-500 transition-colors" placeholder="Access Key">
                     </div>
                 </div>
 
-                <button type="submit" class="w-full bg-gradient-to-r from-neon-600 to-neon-400 hover:from-neon-500 hover:to-neon-300 text-black font-bold py-3 px-4 rounded-lg transition-all duration-300 shadow-[0_0_15px_rgba(6,182,212,0.4)] flex items-center justify-center mt-2 uppercase tracking-wide text-sm">
-                    เข้าสู่ระบบ <i data-lucide="chevron-right" class="w-4 h-4 ml-1"></i>
+                <button type="submit" id="btn-login" class="relative w-full bg-neon-600 text-black font-bold py-3 px-4 rounded-lg overflow-hidden transition-all duration-300 shadow-[0_0_15px_rgba(6,182,212,0.3)] hover:shadow-[0_0_25px_rgba(6,182,212,0.6)] hover:bg-neon-400 flex items-center justify-center mt-4 uppercase tracking-wider text-xs">
+                    <span class="relative z-10 flex items-center">เข้าสู่ระบบ <i data-lucide="chevron-right" class="w-4 h-4 ml-1"></i></span>
                 </button>
             </form>
-            <div class="mt-5 text-center text-[10px] text-gray-600">
-                (ระบบจะจดจำการเข้าสู่ระบบของคุณไว้ในอุปกรณ์นี้)
-            </div>
+            <div class="mt-5 text-center text-[9px] text-gray-600 tracking-wider">ระบบจะจดจำการเข้าสู่ระบบไว้ในอุปกรณ์นี้</div>
         </div>
     </div>
 
     <!-- ================= PROFILE MODAL ================= -->
-    <div id="profile-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center opacity-0 transition-opacity duration-300">
-        <div class="glass-panel p-6 rounded-2xl w-full max-w-sm relative border-neon-500/30 transform scale-95 transition-transform duration-300" id="profile-modal-content">
-            <button onclick="closeProfileModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
-            <h3 class="text-lg font-bold text-white mb-4 flex items-center"><i data-lucide="settings" class="w-5 h-5 text-neon-500 mr-2"></i> ตั้งค่าโปรไฟล์</h3>
+    <div id="profile-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center opacity-0 transition-opacity duration-400">
+        <div class="glass-panel p-6 rounded-2xl w-full max-w-sm relative border-neon-500/30 transform scale-95 transition-all duration-400" id="profile-modal-content">
+            <button onclick="closeProfileModal()" class="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+            <h3 class="text-lg font-bold text-white mb-4 flex items-center tracking-wide"><i data-lucide="settings" class="w-5 h-5 text-neon-500 mr-2"></i> ตั้งค่าโปรไฟล์</h3>
             
-            <div class="flex flex-col items-center mb-4">
-                <img id="modal-avatar-preview" src="" alt="Preview" class="w-20 h-20 rounded-full border-2 border-neon-500 mb-3 object-cover shadow-[0_0_10px_rgba(6,182,212,0.3)]">
+            <div class="flex flex-col items-center mb-6">
+                <div class="relative group">
+                    <img id="modal-avatar-preview" src="" alt="Preview" class="w-24 h-24 rounded-full border-2 border-neon-500 object-cover shadow-[0_0_15px_rgba(6,182,212,0.4)] transition-transform duration-300 group-hover:scale-105">
+                    <div class="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                        <i data-lucide="camera" class="w-6 h-6 text-white"></i>
+                    </div>
+                </div>
             </div>
             
-            <div class="space-y-3">
+            <div class="space-y-4">
                 <div>
-                    <label class="block text-xs text-gray-400 mb-1">ชื่อที่แสดง</label>
-                    <input type="text" id="profile-name-input" class="w-full bg-dark-900 border border-gray-700 rounded py-2 px-3 text-white text-sm focus:border-neon-500 outline-none">
+                    <label class="block text-[10px] uppercase tracking-wider text-gray-400 mb-1">เปลี่ยนรูปโปรไฟล์ (อัปโหลดรูป)</label>
+                    <input type="file" id="profile-file-input" accept="image/*" class="w-full text-xs text-gray-400 bg-dark-900 border border-gray-800 rounded outline-none" onchange="previewProfileImage(this)">
                 </div>
                 <div>
-                    <label class="block text-xs text-gray-400 mb-1">ลิงก์รูปโปรไฟล์ (URL ภาพ)</label>
-                    <input type="text" id="profile-img-input" placeholder="https://..." class="w-full bg-dark-900 border border-gray-700 rounded py-2 px-3 text-white text-sm focus:border-neon-500 outline-none">
+                    <label class="block text-[10px] uppercase tracking-wider text-gray-400 mb-1">ชื่อที่แสดง</label>
+                    <input type="text" id="profile-name-input" class="w-full bg-dark-900 border border-gray-800 rounded py-2 px-3 text-white text-sm focus:border-neon-500 outline-none transition-colors">
                 </div>
-                <button onclick="saveProfile()" class="w-full bg-neon-500 text-black font-bold py-2 rounded transition shadow-lg mt-2 text-sm">บันทึกข้อมูล</button>
+                <button onclick="saveProfile()" id="btn-save-profile" class="w-full bg-neon-500 hover:bg-neon-400 text-black font-bold py-2.5 rounded transition-all shadow-[0_0_10px_rgba(6,182,212,0.3)] mt-4 text-xs uppercase tracking-wide">บันทึกข้อมูล</button>
             </div>
         </div>
     </div>
 
     <!-- ================= DASHBOARD VIEW ================= -->
-    <div id="dashboard-view" class="hidden min-h-screen flex flex-col">
+    <div id="dashboard-view" class="hidden min-h-screen flex flex-col transition-opacity duration-1000 opacity-0">
         
-        <!-- Ticker -->
         <div class="ticker-wrap hidden md:flex">
             <div class="ticker-move animate-marquee font-mono">
                 <div class="ticker-item">EURUSD <span class="up">1.0850 ▲</span></div>
@@ -172,130 +173,131 @@
         </div>
 
         <div class="flex-1 flex flex-col md:flex-row h-[calc(100vh-32px)]">
-            <!-- Mobile Header -->
-            <div class="md:hidden glass-panel sticky top-0 z-40 flex justify-between items-center p-4 border-b border-gray-800">
-                <div class="flex items-center text-xl font-black text-white italic">
-                    <i data-lucide="zap" class="w-5 h-5 text-neon-500 mr-2"></i> IMPACT
+            <div class="md:hidden glass-panel sticky top-0 z-40 flex justify-between items-center p-4 border-b border-gray-800 backdrop-blur-xl">
+                <div class="flex items-center text-xl font-black text-white italic tracking-wider">
+                    <img src="im1.jpg" onerror="this.style.display='none'" class="w-6 h-6 mr-2 rounded object-cover">
+                    <span class="text-neon-500 mr-1">IMPACT</span>
                 </div>
-                <button id="mobile-menu-btn" class="text-gray-300"><i data-lucide="menu" class="w-6 h-6"></i></button>
+                <button id="mobile-menu-btn" class="text-gray-300 hover:text-neon-400 transition-colors"><i data-lucide="menu" class="w-6 h-6"></i></button>
             </div>
 
             <!-- Sidebar -->
-            <aside id="sidebar" class="w-64 glass-panel border-r border-gray-800 flex flex-col fixed md:relative h-full z-40 transition-transform transform -translate-x-full md:translate-x-0 flex-shrink-0">
+            <aside id="sidebar" class="w-64 glass-panel border-r border-gray-800 flex flex-col fixed md:relative h-full z-40 transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) -translate-x-full md:translate-x-0 flex-shrink-0">
                 <div class="p-6 hidden md:flex items-center text-2xl font-black text-white border-b border-gray-800 italic tracking-wider">
-                    <i data-lucide="zap" class="w-6 h-6 text-neon-500 mr-2 drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]"></i> IMPACT
+                    <img src="im1.jpg" onerror="this.src='https://ui-avatars.com/api/?name=IM&background=06b6d4&color=000'" class="w-8 h-8 rounded shadow-[0_0_10px_rgba(6,182,212,0.5)] mr-3 object-cover">
+                    IMPACT
                 </div>
                 
-                <!-- Profile Section -->
-                <div class="p-5 border-b border-gray-800 relative group">
-                    <button onclick="openProfileModal()" class="absolute top-3 right-3 text-gray-500 hover:text-neon-500 transition opacity-0 group-hover:opacity-100"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                <div class="p-5 border-b border-gray-800 relative group bg-dark-900/30">
+                    <button onclick="openProfileModal()" class="absolute top-3 right-3 text-gray-500 hover:text-neon-400 transition-all opacity-0 group-hover:opacity-100 hover:scale-110"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
                     <div class="flex items-center space-x-3 cursor-pointer" onclick="openProfileModal()">
-                        <img id="sidebar-avatar" src="" alt="Avatar" class="w-10 h-10 rounded-full border border-neon-500 object-cover">
-                        <div>
-                            <p id="sidebar-name" class="text-white font-medium text-sm truncate w-32">User</p>
-                            <p id="sidebar-role" class="text-[10px] text-neon-500 border border-neon-500/30 px-1.5 py-0.5 rounded mt-0.5 inline-block bg-neon-500/10">Trader</p>
+                        <img id="sidebar-avatar" src="" alt="Avatar" class="w-12 h-12 rounded-full border-2 border-neon-500/50 object-cover shadow-[0_0_10px_rgba(6,182,212,0.2)] transition-transform duration-300 group-hover:scale-105">
+                        <div class="flex-1 overflow-hidden">
+                            <p id="sidebar-name" class="text-white font-medium text-sm truncate w-full transition-colors group-hover:text-neon-400">User</p>
+                            <p id="sidebar-role" class="text-[9px] text-neon-400 border border-neon-500/30 px-1.5 py-0.5 rounded inline-block bg-neon-500/10 tracking-widest uppercase mt-0.5">Trader</p>
                         </div>
                     </div>
                 </div>
 
-                <nav class="p-4 space-y-1 overflow-y-auto text-sm flex-1">
-                    <a href="#" class="flex items-center text-neon-400 bg-neon-500/10 border border-neon-500/20 px-3 py-2.5 rounded-lg shadow-[inset_0_0_10px_rgba(6,182,212,0.1)]">
+                <nav class="p-4 space-y-2 overflow-y-auto text-sm flex-1 custom-scrollbar">
+                    <a href="#" class="flex items-center text-neon-400 bg-neon-500/10 border border-neon-500/30 px-4 py-3 rounded-xl shadow-[inset_0_0_10px_rgba(6,182,212,0.1)] transition-all">
                         <i data-lucide="bar-chart-2" class="w-4 h-4 mr-3"></i> ตลาดเรียลไทม์
                     </a>
-                    <a href="#signals-section" class="flex items-center text-gray-400 hover:text-white hover:bg-dark-800 px-3 py-2.5 rounded-lg transition-colors">
+                    <a href="#signals-section" class="flex items-center text-gray-400 hover:text-white hover:bg-dark-800/80 px-4 py-3 rounded-xl transition-all hover:translate-x-1">
                         <i data-lucide="crosshair" class="w-4 h-4 mr-3 text-accent-400"></i> สัญญาณเทรด (Live)
                     </a>
-                    <a href="#ebook-section" class="flex items-center text-gray-400 hover:text-white hover:bg-dark-800 px-3 py-2.5 rounded-lg transition-colors">
+                    <a href="#ebook-section" class="flex items-center text-gray-400 hover:text-white hover:bg-dark-800/80 px-4 py-3 rounded-xl transition-all hover:translate-x-1">
                         <i data-lucide="book-open" class="w-4 h-4 mr-3"></i> คลัง E-Book
                     </a>
 
-                    <!-- Admin Stats Block (Hidden for normal users) -->
-                    <div id="admin-stats-block" class="hidden mt-6 pt-4 border-t border-gray-800">
-                        <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-2 font-bold">Admin Status</p>
-                        <div class="bg-dark-900 rounded-lg p-3 border border-gray-800">
+                    <!-- Admin Stats -->
+                    <div id="admin-stats-block" class="hidden mt-6 pt-4 border-t border-gray-800 fade-in">
+                        <p class="text-[9px] text-accent-500 uppercase tracking-widest mb-2 font-bold pl-1">Admin Dashboard</p>
+                        <div class="bg-dark-950/80 rounded-xl p-3 border border-gray-800/50 shadow-inner">
                             <div class="flex justify-between items-center mb-2">
-                                <span class="text-xs text-gray-400">เข้าชมทั้งหมด</span>
-                                <span id="stat-total" class="text-xs font-mono text-neon-400">0</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-xs text-gray-400 flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-green-500 mr-1 animate-pulse"></span>ออนไลน์ (จำลอง)</span>
-                                <span id="stat-online" class="text-xs font-mono text-green-400">0</span>
+                                <span class="text-[10px] text-gray-400 uppercase tracking-wide">เข้าใช้งานตอนนี้</span>
+                                <span class="flex items-center">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5 animate-pulse shadow-[0_0_5px_#22c55e]"></span>
+                                    <span id="stat-online" class="text-xs font-mono font-bold text-green-400">0</span>
+                                </span>
                             </div>
                         </div>
                     </div>
                 </nav>
 
-                <!-- Community Links Section (Filling the empty space) -->
-                <div class="p-4 border-t border-gray-800">
-                    <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-2 font-bold pl-2">Community</p>
+                <!-- Community Links (Real Icons) -->
+                <div class="p-4 border-t border-gray-800/50">
+                    <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-2 font-bold pl-2">Community</p>
                     <div class="space-y-1">
-                        <a href="#" class="flex items-center text-gray-400 hover:text-[#0088cc] hover:bg-[#0088cc]/10 px-3 py-2 rounded-lg transition-all text-sm">
-                            <i data-lucide="send" class="w-4 h-4 mr-3"></i> Telegram กลุ่มลับ
+                        <!-- Telegram Link -->
+                        <a href="https://t.me/+geppBgmp7gxhYTY1" target="_blank" class="flex items-center text-gray-400 hover:text-white hover:bg-[#2AABEE]/10 px-3 py-2.5 rounded-xl transition-all text-xs group">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" alt="Telegram" class="w-5 h-5 mr-3 transition-transform group-hover:scale-110 drop-shadow-md"> Telegram กลุ่มลับ
                         </a>
-                        <a href="#" class="flex items-center text-gray-400 hover:text-[#5865F2] hover:bg-[#5865F2]/10 px-3 py-2 rounded-lg transition-all text-sm">
-                            <i data-lucide="headset" class="w-4 h-4 mr-3"></i> Discord ซิกแนล
+                        <!-- IG Link -->
+                        <a href="https://www.instagram.com/iamranger_xi?igsh=MWRiZnZtcHVyZmM3NQ%3D%3D&utm_source=qr" target="_blank" class="flex items-center text-gray-400 hover:text-white hover:bg-[#E1306C]/10 px-3 py-2.5 rounded-xl transition-all text-xs group">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg" alt="Instagram" class="w-5 h-5 mr-3 transition-transform group-hover:scale-110 drop-shadow-md"> Instagram
                         </a>
-                        <a href="#" class="flex items-center text-gray-400 hover:text-[#E1306C] hover:bg-[#E1306C]/10 px-3 py-2 rounded-lg transition-all text-sm">
-                            <i data-lucide="instagram" class="w-4 h-4 mr-3"></i> Instagram
+                        <!-- Discord Placeholder -->
+                        <a href="#" target="_blank" class="flex items-center text-gray-400 hover:text-white hover:bg-[#5865F2]/10 px-3 py-2.5 rounded-xl transition-all text-xs group">
+                            <img src="https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png" alt="Discord" class="w-5 h-5 mr-3 transition-transform group-hover:scale-110 drop-shadow-md object-contain"> Discord พูดคุย
                         </a>
                     </div>
                 </div>
 
                 <div class="p-4 border-t border-gray-800">
-                    <button onclick="logout()" class="flex items-center w-full text-gray-500 hover:text-red-400 hover:bg-red-500/10 text-sm px-3 py-2 rounded-lg transition-colors">
+                    <button onclick="logout()" class="flex items-center w-full text-gray-500 hover:text-red-400 hover:bg-red-500/10 text-xs px-4 py-3 rounded-xl transition-all hover:pl-5">
                         <i data-lucide="log-out" class="w-4 h-4 mr-3"></i> ออกจากระบบ
                     </button>
                 </div>
             </aside>
 
             <!-- Main Content -->
-            <main class="flex-1 p-4 md:p-6 overflow-y-auto w-full scroll-smooth">
-                
-                <div class="flex flex-col lg:flex-row gap-6 mb-8">
-                    <!-- Left Column: Chart -->
+            <main class="flex-1 p-4 md:p-6 overflow-y-auto w-full scroll-smooth custom-scrollbar relative">
+                <div class="absolute top-0 right-0 w-64 h-64 bg-neon-500/5 rounded-full blur-[100px] pointer-events-none"></div>
+
+                <div class="flex flex-col lg:flex-row gap-6 mb-8 relative z-10">
+                    <!-- Chart -->
                     <div class="lg:w-2/3 flex flex-col gap-4 fade-in">
                         <div class="flex justify-between items-center">
-                            <h2 class="text-lg font-bold text-white flex items-center"><i data-lucide="activity" class="w-5 h-5 text-neon-500 mr-2"></i> Live Chart</h2>
-                            <div class="flex bg-dark-900 p-1 rounded-md border border-gray-800">
-                                <button onclick="changeAsset('OANDA:XAUUSD', this)" class="px-3 py-1 text-xs font-medium rounded text-black bg-neon-500 transition-all shadow-[0_0_10px_rgba(6,182,212,0.4)]">XAUUSD</button>
-                                <button onclick="changeAsset('OANDA:EURUSD', this)" class="px-3 py-1 text-xs font-medium rounded text-gray-400 hover:text-white transition-all">EURUSD</button>
-                                <button onclick="changeAsset('BINANCE:BTCUSD', this)" class="px-3 py-1 text-xs font-medium rounded text-gray-400 hover:text-white transition-all">BTCUSD</button>
+                            <h2 class="text-base md:text-lg font-bold text-white flex items-center tracking-wide"><i data-lucide="activity" class="w-5 h-5 text-neon-500 mr-2"></i> LIVE CHART</h2>
+                            <div class="flex bg-dark-900 p-1 rounded-lg border border-gray-800">
+                                <button onclick="changeAsset('OANDA:XAUUSD', this)" class="px-4 py-1.5 text-xs font-bold rounded-md text-black bg-neon-500 transition-all shadow-[0_0_10px_rgba(6,182,212,0.4)]">XAUUSD</button>
+                                <button onclick="changeAsset('OANDA:EURUSD', this)" class="px-4 py-1.5 text-xs font-medium rounded-md text-gray-400 hover:text-white transition-all">EURUSD</button>
+                                <button onclick="changeAsset('BINANCE:BTCUSD', this)" class="px-4 py-1.5 text-xs font-medium rounded-md text-gray-400 hover:text-white transition-all">BTCUSD</button>
                             </div>
                         </div>
-                        <div class="glass-panel rounded-xl overflow-hidden neon-border h-[400px]">
+                        <div class="glass-panel rounded-2xl overflow-hidden border border-neon-500/20 shadow-[0_5px_30px_rgba(0,0,0,0.5)] h-[400px] md:h-[450px]">
                             <div id="tradingview-container" class="w-full h-full"></div>
                         </div>
                     </div>
 
-                    <!-- Right Column: MM & News -->
+                    <!-- MM & News -->
                     <div class="lg:w-1/3 flex flex-col gap-5 fade-in" style="animation-delay: 0.1s;">
-                        <!-- Lot Calculator -->
-                        <div class="glass-panel rounded-xl p-5 border border-gray-800 bg-gradient-to-b from-dark-900 to-dark-950">
-                            <h3 class="text-sm font-bold text-white mb-4 flex items-center"><i data-lucide="calculator" class="w-4 h-4 text-neon-500 mr-2"></i> คำนวณ Lot (MM)</h3>
-                            <div class="grid grid-cols-2 gap-3 mb-3">
-                                <div><label class="text-xs text-gray-400 block mb-1">ทุน ($)</label><input type="number" id="calc-balance" value="1000" class="w-full bg-dark-950 border border-gray-800 rounded p-2 text-white text-sm focus:border-neon-500 outline-none transition"></div>
-                                <div><label class="text-xs text-gray-400 block mb-1">SL (Pips)</label><input type="number" id="calc-sl" value="30" class="w-full bg-dark-950 border border-gray-800 rounded p-2 text-white text-sm focus:border-neon-500 outline-none transition"></div>
+                        <div class="glass-panel rounded-2xl p-5 border border-gray-800/80 bg-gradient-to-b from-dark-900/80 to-dark-950/80 shadow-lg">
+                            <h3 class="text-sm font-bold text-white mb-4 flex items-center tracking-wide"><i data-lucide="calculator" class="w-4 h-4 text-neon-500 mr-2"></i> คำนวณ LOT (MM)</h3>
+                            <div class="grid grid-cols-2 gap-3 mb-4">
+                                <div><label class="text-[10px] uppercase text-gray-400 block mb-1 font-semibold">ทุน ($)</label><input type="number" id="calc-balance" value="1000" class="w-full bg-dark-950 border border-gray-800 rounded-lg p-2.5 text-white text-sm focus:border-neon-500 outline-none transition-colors shadow-inner"></div>
+                                <div><label class="text-[10px] uppercase text-gray-400 block mb-1 font-semibold">SL (Pips)</label><input type="number" id="calc-sl" value="30" class="w-full bg-dark-950 border border-gray-800 rounded-lg p-2.5 text-white text-sm focus:border-neon-500 outline-none transition-colors shadow-inner"></div>
                             </div>
-                            <div class="grid grid-cols-3 gap-2 mb-4">
-                                <button onclick="calculateLot(0.01)" class="py-1.5 rounded bg-green-500/10 text-green-400 border border-green-500/30 text-xs hover:bg-green-500/20 transition">Low 1%</button>
-                                <button onclick="calculateLot(0.05)" class="py-1.5 rounded bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 text-xs hover:bg-yellow-500/20 transition">Mid 5%</button>
-                                <button onclick="calculateLot(1.00)" class="py-1.5 rounded bg-red-500/10 text-red-500 border border-red-500/40 text-xs font-bold hover:bg-red-500/20 transition shadow-[0_0_10px_rgba(239,68,68,0.2)]">ALL IN</button>
+                            <div class="grid grid-cols-3 gap-2 mb-5">
+                                <button onclick="calculateLot(0.01)" class="py-2 rounded-lg bg-green-500/10 text-green-400 border border-green-500/20 text-xs font-medium hover:bg-green-500/20 transition-colors">Low 1%</button>
+                                <button onclick="calculateLot(0.05)" class="py-2 rounded-lg bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 text-xs font-medium hover:bg-yellow-500/20 transition-colors">Mid 5%</button>
+                                <button onclick="calculateLot(1.00)" class="py-2 rounded-lg bg-red-500/10 text-red-500 border border-red-500/30 text-xs font-black hover:bg-red-500/20 transition-all shadow-[0_0_10px_rgba(239,68,68,0.2)] hover:shadow-[0_0_15px_rgba(239,68,68,0.4)]">ALL IN</button>
                             </div>
-                            <div class="bg-dark-950 py-3 rounded-lg border border-neon-500/20 text-center relative overflow-hidden">
+                            <div class="bg-dark-950 py-4 rounded-xl border border-neon-500/20 text-center relative overflow-hidden shadow-inner">
                                 <div class="absolute inset-0 bg-neon-500/5 blur-xl"></div>
-                                <p class="text-[10px] text-gray-500 relative z-10">Lot ที่แนะนำ</p>
-                                <p id="calc-result" class="text-3xl font-black text-neon-400 relative z-10 tracking-wider">0.00</p>
+                                <p class="text-[10px] text-gray-500 relative z-10 uppercase tracking-widest font-semibold mb-1">Lot ที่แนะนำ</p>
+                                <p id="calc-result" class="text-4xl font-black text-neon-400 relative z-10 tracking-widest drop-shadow-[0_0_8px_rgba(6,182,212,0.5)]">0.00</p>
                             </div>
                         </div>
 
-                        <!-- Mini News -->
-                        <div class="glass-panel rounded-xl p-5 border border-gray-800 flex-1 flex flex-col">
-                            <h3 class="text-sm font-bold text-white mb-3 flex items-center justify-between">
+                        <div class="glass-panel rounded-2xl p-5 border border-gray-800/80 flex-1 flex flex-col shadow-lg">
+                            <h3 class="text-sm font-bold text-white mb-3 flex items-center justify-between tracking-wide">
                                 <span class="flex items-center"><i data-lucide="radio" class="w-4 h-4 text-accent-400 mr-2"></i> ข่าวด่วน</span>
                             </h3>
-                            <div id="news-container" class="space-y-3 overflow-y-auto pr-2 max-h-[150px]">
-                                <div class="border-l-2 border-accent-500 pl-3 py-1"><span class="text-[9px] text-gray-500">10:30</span><p class="text-xs text-gray-300 mt-0.5">Fed ประกาศคงอัตราดอกเบี้ย</p></div>
-                                <div class="border-l-2 border-neon-500 pl-3 py-1"><span class="text-[9px] text-gray-500">09:15</span><p class="text-xs text-gray-300 mt-0.5">NFP ออกมาดีกว่าคาดการณ์</p></div>
+                            <div id="news-container" class="space-y-3 overflow-y-auto pr-2 custom-scrollbar">
+                                <div class="border-l-2 border-accent-500 pl-3 py-1 hover:pl-4 transition-all"><span class="text-[9px] text-gray-500 font-mono">10:30</span><p class="text-xs text-gray-300 mt-0.5">Fed ประกาศคงอัตราดอกเบี้ย</p></div>
+                                <div class="border-l-2 border-neon-500 pl-3 py-1 hover:pl-4 transition-all"><span class="text-[9px] text-gray-500 font-mono">09:15</span><p class="text-xs text-gray-300 mt-0.5">NFP ออกมาดีกว่าคาดการณ์</p></div>
                             </div>
                         </div>
                     </div>
@@ -303,57 +305,69 @@
 
                 <!-- Signals Section -->
                 <div id="signals-section" class="mb-10 fade-in" style="animation-delay: 0.2s;">
-                    <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-800">
-                        <h3 class="text-lg font-bold text-white flex items-center">
+                    <div class="flex justify-between items-center mb-5 pb-3 border-b border-gray-800/50">
+                        <h3 class="text-base md:text-lg font-bold text-white flex items-center tracking-wide">
                             <i data-lucide="crosshair" class="w-5 h-5 text-accent-400 mr-2"></i> สัญญาณเทรด
-                            <span class="text-[9px] font-normal bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded ml-2 border border-green-500/30 flex items-center"><span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-1 animate-pulse"></span>LIVE</span>
+                            <span class="text-[9px] font-bold bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full ml-3 border border-green-500/30 flex items-center tracking-widest"><span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5 animate-pulse shadow-[0_0_5px_#22c55e]"></span>LIVE</span>
                         </h3>
-                        <button id="btn-add-signal" class="hidden bg-neon-500 hover:bg-neon-400 text-black text-xs font-bold py-1.5 px-3 rounded shadow-[0_0_10px_rgba(6,182,212,0.3)] transition">
-                            + แจกซิกแนล
+                        <button id="btn-add-signal" class="hidden bg-neon-500 hover:bg-neon-400 text-black text-xs font-bold py-2 px-4 rounded-lg shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all transform hover:-translate-y-0.5">
+                            + สร้างซิกแนล
                         </button>
                     </div>
 
-                    <!-- Admin Signal Form -->
-                    <div id="admin-signal-form" class="hidden glass-panel p-4 rounded-lg mb-4 border border-neon-500/40 bg-neon-500/5">
-                        <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
-                            <div class="md:col-span-1"><input type="text" id="sig-asset" placeholder="คู่เงิน" class="w-full bg-dark-950 border border-gray-700 rounded p-2 text-white text-xs uppercase"></div>
-                            <div class="md:col-span-1"><select id="sig-type" class="w-full bg-dark-950 border border-gray-700 rounded p-2 text-white text-xs"><option value="BUY">BUY</option><option value="SELL">SELL</option></select></div>
-                            <div class="md:col-span-1"><input type="number" id="sig-entry" placeholder="Entry" class="w-full bg-dark-950 border border-gray-700 rounded p-2 text-white text-xs"></div>
-                            <div class="md:col-span-1"><input type="number" id="sig-tp" placeholder="TP" class="w-full bg-dark-950 border border-gray-700 rounded p-2 text-white text-xs"></div>
-                            <div class="md:col-span-1"><input type="number" id="sig-sl" placeholder="SL" class="w-full bg-dark-950 border border-gray-700 rounded p-2 text-white text-xs"></div>
-                            <div class="md:col-span-1"><button onclick="postSignalToFirebase()" class="w-full h-full bg-neon-500 text-black text-xs font-bold rounded hover:bg-neon-400 transition">POST</button></div>
+                    <div id="admin-signal-form" class="hidden glass-panel p-5 rounded-xl mb-6 border border-neon-500/30 bg-gradient-to-r from-neon-500/5 to-transparent shadow-lg">
+                        <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
+                            <div class="md:col-span-1"><label class="text-[9px] text-gray-500 uppercase mb-1 block">คู่เงิน</label><input type="text" id="sig-asset" placeholder="XAUUSD" class="w-full bg-dark-950 border border-gray-700 rounded-lg p-2 text-white text-xs uppercase focus:border-neon-500 outline-none transition"></div>
+                            <div class="md:col-span-1"><label class="text-[9px] text-gray-500 uppercase mb-1 block">Type</label><select id="sig-type" class="w-full bg-dark-950 border border-gray-700 rounded-lg p-2 text-white text-xs focus:border-neon-500 outline-none"><option value="BUY">BUY</option><option value="SELL">SELL</option></select></div>
+                            <div class="md:col-span-1"><label class="text-[9px] text-gray-500 uppercase mb-1 block">Entry</label><input type="number" id="sig-entry" placeholder="0.00" class="w-full bg-dark-950 border border-gray-700 rounded-lg p-2 text-white text-xs focus:border-neon-500 outline-none transition"></div>
+                            <div class="md:col-span-1"><label class="text-[9px] text-gray-500 uppercase mb-1 block">TP</label><input type="number" id="sig-tp" placeholder="0.00" class="w-full bg-dark-950 border border-gray-700 rounded-lg p-2 text-white text-xs focus:border-neon-500 outline-none transition"></div>
+                            <div class="md:col-span-1"><label class="text-[9px] text-gray-500 uppercase mb-1 block">SL</label><input type="number" id="sig-sl" placeholder="0.00" class="w-full bg-dark-950 border border-gray-700 rounded-lg p-2 text-white text-xs focus:border-neon-500 outline-none transition"></div>
+                            <div class="md:col-span-1 flex items-end"><button onclick="postSignalToFirebase()" class="w-full bg-neon-500 text-black text-xs font-bold py-2.5 rounded-lg hover:bg-neon-400 transition-colors shadow-md">POST</button></div>
                         </div>
                     </div>
 
-                    <div id="signals-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div class="text-center text-gray-600 text-sm col-span-full py-8"><i data-lucide="loader-2" class="w-5 h-5 animate-spin mx-auto mb-2"></i> Connecting to DB...</div>
+                    <div id="signals-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                        <div class="text-center text-gray-500 text-sm col-span-full py-12 flex flex-col items-center"><i data-lucide="loader-2" class="w-6 h-6 animate-spin mb-3 text-neon-500"></i> เชื่อมต่อฐานข้อมูล...</div>
                     </div>
                 </div>
                 
                 <!-- PDF / E-Book Section -->
-                <div id="ebook-section" class="mb-8 fade-in" style="animation-delay: 0.3s;">
-                    <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-800">
-                        <h3 class="text-lg font-bold text-white flex items-center">
-                            <i data-lucide="book-open" class="w-5 h-5 text-neon-500 mr-2"></i> คลัง E-Book
+                <div id="ebook-section" class="mb-10 fade-in" style="animation-delay: 0.3s;">
+                    <div class="flex justify-between items-center mb-5 pb-3 border-b border-gray-800/50">
+                        <h3 class="text-base md:text-lg font-bold text-white flex items-center tracking-wide">
+                            <i data-lucide="book-open" class="w-5 h-5 text-neon-500 mr-2"></i> คลัง E-BOOK
                         </h3>
-                        <button id="btn-add-ebook" class="hidden bg-dark-800 border border-gray-700 hover:border-neon-500 text-gray-300 hover:text-neon-500 text-xs py-1.5 px-3 rounded transition flex items-center">
-                            <i data-lucide="plus" class="w-3 h-3 mr-1"></i> เพิ่ม E-Book
+                        <button id="btn-add-ebook" class="hidden bg-dark-800 border border-gray-700 hover:border-neon-500 hover:bg-neon-500/10 text-gray-300 hover:text-neon-400 text-xs py-2 px-4 rounded-lg transition-all flex items-center">
+                            <i data-lucide="upload-cloud" class="w-4 h-4 mr-2"></i> อัปโหลด E-Book
                         </button>
                     </div>
 
-                    <!-- Admin E-Book Form -->
-                    <div id="admin-ebook-form" class="hidden glass-panel p-4 rounded-lg mb-4 border border-gray-700">
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
-                            <div class="md:col-span-1"><input type="text" id="eb-title" placeholder="ชื่อหนังสือ" class="w-full bg-dark-950 border border-gray-700 rounded p-2 text-white text-xs"></div>
-                            <div class="md:col-span-1"><input type="text" id="eb-img" placeholder="ลิงก์รูปหน้าปก (URL)" class="w-full bg-dark-950 border border-gray-700 rounded p-2 text-white text-xs"></div>
-                            <div class="md:col-span-1"><input type="text" id="eb-link" placeholder="ลิงก์ดาวน์โหลด PDF" class="w-full bg-dark-950 border border-gray-700 rounded p-2 text-white text-xs"></div>
-                            <div class="md:col-span-1"><button onclick="postEbookToFirebase()" class="w-full h-full bg-gray-700 text-white hover:bg-neon-500 hover:text-black text-xs font-bold rounded transition">อัปโหลด</button></div>
+                    <!-- Admin E-Book Form (ไฟล์อัปโหลด) -->
+                    <div id="admin-ebook-form" class="hidden glass-panel p-5 rounded-xl mb-6 border border-gray-700/50 bg-dark-900/50 shadow-lg">
+                        <p class="text-[10px] text-accent-500 font-bold mb-3 uppercase tracking-widest"><i data-lucide="file-up" class="w-3 h-3 inline mr-1"></i> อัปโหลดไฟล์เข้าสู่ระบบ</p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-[10px] text-gray-400 mb-1 uppercase tracking-widest">ชื่อหนังสือ</label>
+                                <input type="text" id="eb-title" placeholder="พิมพ์ชื่อหนังสือ..." class="w-full bg-dark-950 border border-gray-800 rounded-lg p-2.5 text-white text-xs outline-none focus:border-neon-500">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-gray-400 mb-1 uppercase tracking-widest">รูปหน้าปก (Image)</label>
+                                <input type="file" id="eb-cover-file" accept="image/*" class="w-full text-[10px] text-gray-400 bg-dark-950 border border-gray-800 rounded-lg file:mr-2 file:py-2 file:px-3 file:border-0 file:text-xs file:font-semibold file:bg-dark-800 file:text-gray-300 hover:file:bg-neon-500 hover:file:text-black cursor-pointer">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-gray-400 mb-1 uppercase tracking-widest">ไฟล์เนื้อหา (PDF)</label>
+                                <input type="file" id="eb-pdf-file" accept="application/pdf" class="w-full text-[10px] text-gray-400 bg-dark-950 border border-gray-800 rounded-lg file:mr-2 file:py-2 file:px-3 file:border-0 file:text-xs file:font-semibold file:bg-dark-800 file:text-gray-300 hover:file:bg-red-500 hover:file:text-white cursor-pointer">
+                            </div>
+                            <div class="md:col-span-3 flex justify-end mt-2">
+                                <button onclick="postEbookToFirebase()" id="btn-upload-ebook" class="bg-gray-700 text-white hover:bg-neon-500 hover:text-black text-xs font-bold py-2.5 px-6 rounded-lg transition-colors shadow-md flex items-center">
+                                    <i data-lucide="upload" class="w-4 h-4 mr-2"></i> ยืนยันการอัปโหลด
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    <div id="ebooks-container" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                        <!-- Rendered by JS -->
-                        <div class="text-center text-gray-600 text-sm col-span-full py-4">กำลังโหลดคลังความรู้...</div>
+                    <div id="ebooks-container" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-5">
+                        <div class="text-center text-gray-600 text-sm col-span-full py-8">กำลังโหลดคลังความรู้...</div>
                     </div>
                 </div>
 
@@ -364,26 +378,39 @@
     <script>
         lucide.createIcons();
 
-        // --- STATE & LOCAL STORAGE ---
-        const state = { user: null, adminClickCount: 0 };
+        const state = { user: null, adminClickCount: 0, sessionId: null };
 
-        // ตรวจสอบว่าเคยล็อกอินไว้ไหม
+        // สร้าง Session ID แบบง่ายๆ สำหรับเช็คคนออนไลน์
+        function initSession() {
+            let sid = sessionStorage.getItem('impactSession');
+            if(!sid) { sid = 'sess_' + Math.random().toString(36).substr(2, 9); sessionStorage.setItem('impactSession', sid); }
+            state.sessionId = sid;
+        }
+
         window.onload = () => {
+            initSession();
             const savedUser = localStorage.getItem('impactUser');
             if (savedUser) {
                 state.user = JSON.parse(savedUser);
                 document.getElementById('login-view').classList.add('hidden');
-                document.getElementById('dashboard-view').classList.remove('hidden');
+                
+                const dashboard = document.getElementById('dashboard-view');
+                dashboard.classList.remove('hidden');
+                setTimeout(() => dashboard.classList.remove('opacity-0'), 50);
+                
                 initDashboard();
+                markOnline(); // บอก Firebase ว่าออนไลน์แล้ว
+            } else {
+                document.getElementById('login-view').classList.remove('opacity-0');
             }
         };
 
-        // --- LOGIN LOGIC ---
+        // --- LOGIN ---
         document.getElementById('logo-trigger').addEventListener('click', () => {
             state.adminClickCount++;
             if (state.adminClickCount >= 5) {
                 document.getElementById('admin-secret-area').classList.remove('hidden');
-                showToast('ACCESS GRANTED: ADMIN OVERRIDE ENABLED', 'info');
+                showToast('ACCESS GRANTED: ADMIN OVERRIDE', 'info');
                 state.adminClickCount = 0;
             }
         });
@@ -392,47 +419,72 @@
             e.preventDefault();
             const username = document.getElementById('login-username').value.trim();
             const adminKey = document.getElementById('admin-key').value;
-
             if(!username) return;
 
             // รหัสผ่าน Admin ใหม่: adminimpfx
             if (adminKey === 'adminimpfx') {
-                state.user = { 
-                    role: 'admin', 
-                    name: username, 
-                    img: `https://ui-avatars.com/api/?name=${username}&background=06b6d4&color=000` 
-                };
-                showToast('Welcome back, Commander (Admin)');
+                state.user = { role: 'admin', name: username, img: `https://ui-avatars.com/api/?name=${username}&background=06b6d4&color=000` };
+                showToast('Welcome Commander');
             } else {
-                state.user = { 
-                    role: 'user', 
-                    name: username, 
-                    img: `https://ui-avatars.com/api/?name=${username}&background=27272a&color=fff` 
-                };
+                state.user = { role: 'user', name: username, img: `https://ui-avatars.com/api/?name=${username}&background=27272a&color=fff` };
                 showToast('เข้าสู่ระบบสำเร็จ');
             }
 
-            // บันทึกลงเครื่อง
             localStorage.setItem('impactUser', JSON.stringify(state.user));
-
-            // บันทึกสถิติคนเข้าเว็บลง Firebase
-            recordVisit();
-
-            document.getElementById('login-view').classList.add('hidden');
-            document.getElementById('dashboard-view').classList.remove('hidden');
-            initDashboard();
+            
+            document.getElementById('login-view').classList.add('opacity-0');
+            setTimeout(() => {
+                document.getElementById('login-view').classList.add('hidden');
+                const dashboard = document.getElementById('dashboard-view');
+                dashboard.classList.remove('hidden');
+                setTimeout(() => dashboard.classList.remove('opacity-0'), 50);
+                initDashboard();
+                markOnline();
+            }, 500);
         });
 
         window.logout = function() {
+            markOffline(); // ลบสถานะออนไลน์
             localStorage.removeItem('impactUser');
             state.user = null;
-            document.getElementById('dashboard-view').classList.add('hidden');
-            document.getElementById('login-view').classList.remove('hidden');
-            document.getElementById('login-form').reset();
-            document.getElementById('admin-secret-area').classList.add('hidden');
+            
+            document.getElementById('dashboard-view').classList.add('opacity-0');
+            setTimeout(() => {
+                document.getElementById('dashboard-view').classList.add('hidden');
+                const login = document.getElementById('login-view');
+                login.classList.remove('hidden');
+                setTimeout(() => login.classList.remove('opacity-0'), 50);
+                document.getElementById('login-form').reset();
+                document.getElementById('admin-secret-area').classList.add('hidden');
+            }, 500);
         };
 
-        // --- DASHBOARD INIT ---
+        // การเช็คคนออนไลน์ (ลบ Session เมื่อปิดเว็บ)
+        window.addEventListener('beforeunload', () => { if(state.user) markOffline(); });
+
+        async function markOnline() {
+            try {
+                const { db, setDoc, doc } = window.fb;
+                await setDoc(doc(db, "active_sessions", state.sessionId), { user: state.user.name, time: Date.now() });
+            } catch(e) { /* Ignore error if db rules restrict */ }
+        }
+        async function markOffline() {
+            try {
+                const { db, deleteDoc, doc } = window.fb;
+                await deleteDoc(doc(db, "active_sessions", state.sessionId));
+            } catch(e) {}
+        }
+
+        function setupAdminStats() {
+            const { db, collection, onSnapshot } = window.fb;
+            const statOnline = document.getElementById('stat-online');
+            
+            // นับจำนวน Document ใน active_sessions
+            onSnapshot(collection(db, "active_sessions"), (snapshot) => {
+                statOnline.innerText = snapshot.size;
+            });
+        }
+
         function initDashboard() {
             updateProfileUI();
 
@@ -441,8 +493,7 @@
                 document.getElementById('btn-add-ebook').classList.remove('hidden');
                 document.getElementById('admin-stats-block').classList.remove('hidden');
                 document.getElementById('sidebar-role').innerText = 'ADMIN';
-                document.getElementById('sidebar-role').className = 'text-[10px] text-accent-400 border border-accent-500/30 px-1.5 py-0.5 rounded mt-0.5 inline-block bg-accent-500/10 font-bold';
-                
+                document.getElementById('sidebar-role').className = 'text-[9px] text-black border border-neon-500/30 px-1.5 py-0.5 rounded inline-block bg-neon-500 font-bold uppercase tracking-widest mt-0.5';
                 setupAdminStats();
             }
 
@@ -451,22 +502,30 @@
             setupFirebaseEbooks();
         }
 
-        // --- PROFILE MANAGEMENT ---
+        // --- FILE UPLOAD HELPER ---
+        async function uploadFileToStorage(file, folderPath) {
+            const { storage, ref, uploadBytes, getDownloadURL } = window.fb;
+            const uniqueName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`; // ป้องกันชื่อไฟล์แปลกๆ
+            const storageRef = ref(storage, `${folderPath}/${uniqueName}`);
+            await uploadBytes(storageRef, file);
+            return await getDownloadURL(storageRef);
+        }
+
+        // --- PROFILE UPLOAD ---
         function updateProfileUI() {
             document.getElementById('sidebar-name').innerText = state.user.name;
             document.getElementById('sidebar-avatar').src = state.user.img;
         }
 
         window.openProfileModal = function() {
+            document.getElementById('profile-name-input').value = state.user.name;
+            document.getElementById('modal-avatar-preview').src = state.user.img;
+            document.getElementById('profile-file-input').value = ''; // Reset file input
+            
             const modal = document.getElementById('profile-modal');
             const content = document.getElementById('profile-modal-content');
-            
-            document.getElementById('profile-name-input').value = state.user.name;
-            document.getElementById('profile-img-input').value = state.user.img.includes('ui-avatars') ? '' : state.user.img;
-            document.getElementById('modal-avatar-preview').src = state.user.img;
-            
             modal.classList.remove('hidden');
-            void modal.offsetWidth; // trigger reflow
+            void modal.offsetWidth;
             modal.classList.replace('opacity-0', 'opacity-100');
             content.classList.replace('scale-95', 'scale-100');
         };
@@ -476,42 +535,62 @@
             const content = document.getElementById('profile-modal-content');
             modal.classList.replace('opacity-100', 'opacity-0');
             content.classList.replace('scale-100', 'scale-95');
-            setTimeout(() => modal.classList.add('hidden'), 300);
+            setTimeout(() => modal.classList.add('hidden'), 400);
         };
 
-        window.saveProfile = function() {
-            const newName = document.getElementById('profile-name-input').value.trim();
-            const newImg = document.getElementById('profile-img-input').value.trim();
+        window.previewProfileImage = function(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) { document.getElementById('modal-avatar-preview').src = e.target.result; }
+                reader.readAsDataURL(input.files[0]);
+            }
+        };
 
-            if(newName) state.user.name = newName;
-            state.user.img = newImg ? newImg : `https://ui-avatars.com/api/?name=${state.user.name}&background=${state.user.role==='admin'?'06b6d4':'27272a'}&color=${state.user.role==='admin'?'000':'fff'}`;
-            
+        window.saveProfile = async function() {
+            const newName = document.getElementById('profile-name-input').value.trim();
+            const fileInput = document.getElementById('profile-file-input');
+            const btn = document.getElementById('btn-save-profile');
+
+            if(!newName) return;
+            state.user.name = newName;
+
+            if(fileInput.files.length > 0) {
+                btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin inline mr-2"></i> กำลังอัปโหลด...';
+                btn.disabled = true;
+                btn.classList.add('opacity-50');
+                try {
+                    // อัปโหลดขึ้นโฟลเดอร์ profiles ใน Storage
+                    const downloadUrl = await uploadFileToStorage(fileInput.files[0], 'profiles');
+                    state.user.img = downloadUrl;
+                } catch (error) {
+                    console.error(error);
+                    showToast('อัปโหลดรูปภาพล้มเหลว (เช็ค Storage Rules)', 'error');
+                }
+            }
+
             localStorage.setItem('impactUser', JSON.stringify(state.user));
             updateProfileUI();
-            showToast('อัปเดตโปรไฟล์เรียบร้อย');
+            showToast('บันทึกโปรไฟล์เรียบร้อย');
+            
+            btn.innerHTML = 'บันทึกข้อมูล';
+            btn.disabled = false;
+            btn.classList.remove('opacity-50');
             closeProfileModal();
         };
 
-        // --- TRADINGVIEW & CALCULATOR ---
+        // --- TRADINGVIEW ---
         function loadTradingViewChart(symbol) {
             const container = document.getElementById('tradingview-container');
             container.innerHTML = ''; 
             const widgetDiv = document.createElement('div');
-            widgetDiv.id = `tv-widget-${Date.now()}`;
+            widgetDiv.id = `tv-${Date.now()}`;
             widgetDiv.className = "w-full h-full";
             container.appendChild(widgetDiv);
-
             const script = document.createElement('script');
             script.type = 'text/javascript';
             script.src = 'https://s3.tradingview.com/tv.js';
             script.onload = () => {
-                new TradingView.widget({
-                    "autosize": true, "symbol": symbol, "interval": "15",
-                    "timezone": "Asia/Bangkok", "theme": "dark", "style": "1",
-                    "locale": "th_TH", "enable_publishing": false,
-                    "backgroundColor": "#09090b", "gridColor": "#18181b", // match zinc-950/900
-                    "hide_top_toolbar": false, "container_id": widgetDiv.id
-                });
+                new TradingView.widget({ "autosize": true, "symbol": symbol, "interval": "15", "timezone": "Asia/Bangkok", "theme": "dark", "style": "1", "locale": "th_TH", "enable_publishing": false, "backgroundColor": "#09090b", "gridColor": "#18181b", "hide_top_toolbar": false, "container_id": widgetDiv.id });
             };
             document.body.appendChild(script);
         }
@@ -519,10 +598,10 @@
         window.changeAsset = function(symbol, btnElement) {
             document.querySelectorAll('#dashboard-view button').forEach(b => {
                 if(b.innerText.includes('XAU') || b.innerText.includes('EUR') || b.innerText.includes('BTC')){
-                    b.className = "px-3 py-1 text-xs font-medium rounded text-gray-400 hover:text-white transition-all";
+                    b.className = "px-4 py-1.5 text-xs font-medium rounded-md text-gray-400 hover:text-white transition-all";
                 }
             });
-            btnElement.className = "px-3 py-1 text-xs font-medium rounded text-black bg-neon-500 transition-all shadow-[0_0_10px_rgba(6,182,212,0.4)]";
+            btnElement.className = "px-4 py-1.5 text-xs font-bold rounded-md text-black bg-neon-500 transition-all shadow-[0_0_10px_rgba(6,182,212,0.4)]";
             loadTradingViewChart(symbol);
         }
 
@@ -530,191 +609,149 @@
             const bal = parseFloat(document.getElementById('calc-balance').value);
             const sl = parseFloat(document.getElementById('calc-sl').value);
             if(!bal || !sl) return;
-            let lot = (bal * riskPerc) / (sl * 10);
-            document.getElementById('calc-result').innerText = Math.max(0.01, lot).toFixed(2);
+            document.getElementById('calc-result').innerText = Math.max(0.01, (bal * riskPerc) / (sl * 10)).toFixed(2);
         }
 
-        // ==========================================
-        // FIREBASE: SIGNALS
-        // ==========================================
+        // --- SIGNALS ---
         document.getElementById('btn-add-signal').addEventListener('click', () => {
-            document.getElementById('admin-signal-form').classList.toggle('hidden');
+            const form = document.getElementById('admin-signal-form');
+            form.classList.toggle('hidden');
         });
 
         window.postSignalToFirebase = async function() {
-            const signalData = {
-                asset: document.getElementById('sig-asset').value.toUpperCase(),
-                type: document.getElementById('sig-type').value,
-                entry: parseFloat(document.getElementById('sig-entry').value),
-                tp: parseFloat(document.getElementById('sig-tp').value),
-                sl: parseFloat(document.getElementById('sig-sl').value),
-                status: 'pending',
-                timestamp: Date.now()
-            };
-
-            if(!signalData.asset || isNaN(signalData.entry)) return showToast('ข้อมูลไม่ครบถ้วน', 'error');
-
+            const data = { asset: document.getElementById('sig-asset').value.toUpperCase(), type: document.getElementById('sig-type').value, entry: parseFloat(document.getElementById('sig-entry').value), tp: parseFloat(document.getElementById('sig-tp').value), sl: parseFloat(document.getElementById('sig-sl').value), status: 'pending', timestamp: Date.now() };
+            if(!data.asset || isNaN(data.entry)) return showToast('ข้อมูลไม่ครบ', 'error');
             try {
-                const { db, collection, addDoc } = window.firebaseTools;
-                await addDoc(collection(db, "signals"), signalData);
+                const { db, collection, addDoc } = window.fb;
+                await addDoc(collection(db, "signals"), data);
                 document.getElementById('admin-signal-form').classList.add('hidden');
-                showToast('Signal Deployed!');
+                showToast('กระจายสัญญาณสำเร็จ!');
                 ['sig-asset', 'sig-entry', 'sig-tp', 'sig-sl'].forEach(id => document.getElementById(id).value = '');
-            } catch (error) { console.error(error); showToast('Error posting signal', 'error'); }
+            } catch (e) { showToast('Error', 'error'); }
         }
 
-        window.updateFirebaseSignal = async function(docId, newStatus) {
-            try {
-                const { db, doc, updateDoc } = window.firebaseTools;
-                await updateDoc(doc(db, "signals", docId), { status: newStatus });
-            } catch (error) { console.error(error); showToast('Update Error', 'error'); }
+        window.updateFirebaseSignal = async function(id, status) {
+            try { const { db, doc, updateDoc } = window.fb; await updateDoc(doc(db, "signals", id), { status }); } catch(e){}
         };
 
         function setupFirebaseSignals() {
-            const { db, collection, query, orderBy, onSnapshot } = window.firebaseTools;
-            const container = document.getElementById('signals-container');
-
-            onSnapshot(query(collection(db, "signals"), orderBy("timestamp", "desc")), (snapshot) => {
-                container.innerHTML = '';
-                if (snapshot.empty) return container.innerHTML = '<div class="text-gray-500 text-xs col-span-full py-4 text-center">ไม่มีสัญญาณในระบบ</div>';
-
-                snapshot.forEach((doc) => {
-                    const sig = { id: doc.id, ...doc.data() };
-                    
-                    let statusUI = sig.status === 'pending' ? '<span class="text-yellow-400 bg-yellow-400/10 px-2 py-0.5 rounded text-[9px] border border-yellow-400/20">WAITING</span>' :
-                                   sig.status === 'active' ? '<span class="text-neon-400 bg-neon-500/10 px-2 py-0.5 rounded text-[9px] border border-neon-500/20 animate-pulse">ACTIVE</span>' :
-                                   sig.status === 'tp' ? '<span class="text-green-500 bg-green-500/10 px-2 py-0.5 rounded text-[9px] border border-green-500/20">TP HIT</span>' :
-                                   '<span class="text-red-500 bg-red-500/10 px-2 py-0.5 rounded text-[9px] border border-red-500/20">SL HIT</span>';
-
-                    let typeColor = sig.type === 'BUY' ? 'text-green-400' : 'text-red-400';
-
+            const { db, collection, query, orderBy, onSnapshot } = window.fb;
+            onSnapshot(query(collection(db, "signals"), orderBy("timestamp", "desc")), (snap) => {
+                const c = document.getElementById('signals-container'); c.innerHTML = '';
+                if(snap.empty) return c.innerHTML = '<div class="text-gray-500 text-xs col-span-full py-8 text-center">รอสัญญาณจากระบบ...</div>';
+                snap.forEach((doc) => {
+                    const s = { id: doc.id, ...doc.data() };
+                    let statusUI = s.status === 'pending' ? '<span class="text-yellow-400 bg-yellow-400/10 px-2 py-0.5 rounded font-bold text-[9px] border border-yellow-400/20 shadow-[0_0_8px_rgba(250,204,21,0.2)]">WAITING</span>' :
+                                   s.status === 'active' ? '<span class="text-neon-400 bg-neon-500/10 px-2 py-0.5 rounded font-bold text-[9px] border border-neon-500/30 animate-pulse shadow-[0_0_8px_rgba(6,182,212,0.4)]">ACTIVE</span>' :
+                                   s.status === 'tp' ? '<span class="text-green-400 bg-green-500/10 px-2 py-0.5 rounded font-bold text-[9px] border border-green-500/30">TP HIT</span>' :
+                                   '<span class="text-red-500 bg-red-500/10 px-2 py-0.5 rounded font-bold text-[9px] border border-red-500/30">SL HIT</span>';
+                    let typeColor = s.type === 'BUY' ? 'text-green-400' : 'text-red-400';
                     let adminBtns = state.user?.role === 'admin' ? `
-                        <div class="mt-3 flex gap-1 justify-end border-t border-gray-800 pt-2">
-                            <button onclick="updateFirebaseSignal('${sig.id}', 'active')" class="text-[9px] px-2 py-1 bg-dark-800 hover:bg-neon-500/20 text-neon-400 rounded transition border border-gray-700 hover:border-neon-500/50">ACTIVE</button>
-                            <button onclick="updateFirebaseSignal('${sig.id}', 'tp')" class="text-[9px] px-2 py-1 bg-dark-800 hover:bg-green-500/20 text-green-500 rounded transition border border-gray-700 hover:border-green-500/50">TP</button>
-                            <button onclick="updateFirebaseSignal('${sig.id}', 'sl')" class="text-[9px] px-2 py-1 bg-dark-800 hover:bg-red-500/20 text-red-500 rounded transition border border-gray-700 hover:border-red-500/50">SL</button>
+                        <div class="mt-3 flex gap-2 justify-end border-t border-gray-800/50 pt-3">
+                            <button onclick="updateFirebaseSignal('${s.id}', 'active')" class="text-[9px] px-2 py-1 bg-dark-900 hover:bg-neon-500 hover:text-black text-neon-400 font-bold rounded transition-colors border border-neon-500/50">ACTIVE</button>
+                            <button onclick="updateFirebaseSignal('${s.id}', 'tp')" class="text-[9px] px-2 py-1 bg-dark-900 hover:bg-green-500 hover:text-black text-green-500 font-bold rounded transition-colors border border-green-500/50">TP</button>
+                            <button onclick="updateFirebaseSignal('${s.id}', 'sl')" class="text-[9px] px-2 py-1 bg-dark-900 hover:bg-red-500 hover:text-white text-red-500 font-bold rounded transition-colors border border-red-500/50">SL</button>
                         </div>
                     ` : '';
-
-                    container.innerHTML += `
-                        <div class="glass-panel p-4 rounded-xl border ${sig.status==='active'?'border-neon-500/30':'border-gray-800'} relative hover:-translate-y-1 transition-transform">
-                            <div class="flex justify-between items-center mb-3">
-                                <span class="font-bold text-white text-sm tracking-wide">${sig.asset} <span class="${typeColor} text-[10px] ml-1">${sig.type}</span></span>
+                    c.innerHTML += `
+                        <div class="glass-panel p-5 rounded-2xl border ${s.status==='active'?'border-neon-500/40 shadow-[0_0_15px_rgba(6,182,212,0.15)]':'border-gray-800'} relative hover:-translate-y-1 transition-all">
+                            <div class="flex justify-between items-center mb-4">
+                                <span class="font-black text-white text-sm tracking-widest">${s.asset} <span class="${typeColor} text-[10px] ml-1.5">${s.type}</span></span>
                                 ${statusUI}
                             </div>
-                            <div class="grid grid-cols-3 gap-1 text-center">
-                                <div class="bg-dark-900 rounded p-1.5"><p class="text-[8px] text-gray-500 uppercase tracking-widest">Entry</p><p class="text-xs text-white font-mono">${sig.entry}</p></div>
-                                <div class="bg-dark-900 rounded p-1.5 border border-green-500/10"><p class="text-[8px] text-gray-500 uppercase tracking-widest">TP</p><p class="text-xs text-green-400 font-mono">${sig.tp}</p></div>
-                                <div class="bg-dark-900 rounded p-1.5 border border-red-500/10"><p class="text-[8px] text-gray-500 uppercase tracking-widest">SL</p><p class="text-xs text-red-400 font-mono">${sig.sl}</p></div>
+                            <div class="grid grid-cols-3 gap-2 text-center">
+                                <div class="bg-dark-950/80 rounded-lg p-2 border border-gray-800/50 shadow-inner"><p class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Entry</p><p class="text-sm text-white font-mono">${s.entry}</p></div>
+                                <div class="bg-dark-950/80 rounded-lg p-2 border border-green-500/20 shadow-inner"><p class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 font-bold">TP</p><p class="text-sm text-green-400 font-mono">${s.tp}</p></div>
+                                <div class="bg-dark-950/80 rounded-lg p-2 border border-red-500/20 shadow-inner"><p class="text-[8px] text-gray-500 uppercase tracking-widest mb-1 font-bold">SL</p><p class="text-sm text-red-400 font-mono">${s.sl}</p></div>
                             </div>
                             ${adminBtns}
                         </div>
                     `;
                 });
-            }, (error) => { console.error(error); });
+            });
         }
 
-        // ==========================================
-        // FIREBASE: E-BOOKS
-        // ==========================================
+        // --- E-BOOKS (File Uploads) ---
         document.getElementById('btn-add-ebook').addEventListener('click', () => {
             document.getElementById('admin-ebook-form').classList.toggle('hidden');
         });
 
         window.postEbookToFirebase = async function() {
-            const ebData = {
-                title: document.getElementById('eb-title').value,
-                img: document.getElementById('eb-img').value || 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=200&q=80',
-                link: document.getElementById('eb-link').value || '#',
-                timestamp: Date.now()
-            };
-            if(!ebData.title) return showToast('กรุณาใส่ชื่อหนังสือ', 'error');
+            const title = document.getElementById('eb-title').value.trim();
+            const coverFile = document.getElementById('eb-cover-file').files[0];
+            const pdfFile = document.getElementById('eb-pdf-file').files[0];
+            const btn = document.getElementById('btn-upload-ebook');
+
+            if(!title || !coverFile || !pdfFile) return showToast('กรุณากรอกชื่อและเลือกไฟล์ให้ครบทั้งรูปภาพและ PDF', 'error');
+
+            btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin mr-2"></i> กำลังอัปโหลด...';
+            btn.disabled = true;
+            btn.classList.replace('bg-gray-700', 'bg-yellow-600');
 
             try {
-                const { db, collection, addDoc } = window.firebaseTools;
-                await addDoc(collection(db, "ebooks"), ebData);
+                // 1. อัปโหลดรูปปก
+                const coverUrl = await uploadFileToStorage(coverFile, 'ebook_covers');
+                // 2. อัปโหลดไฟล์ PDF
+                const pdfUrl = await uploadFileToStorage(pdfFile, 'ebook_pdfs');
+
+                // 3. บันทึกข้อมูลลง Firestore
+                const { db, collection, addDoc } = window.fb;
+                await addDoc(collection(db, "ebooks"), { title, img: coverUrl, link: pdfUrl, timestamp: Date.now() });
+                
                 document.getElementById('admin-ebook-form').classList.add('hidden');
                 document.getElementById('eb-title').value = '';
-                document.getElementById('eb-img').value = '';
-                document.getElementById('eb-link').value = '';
-                showToast('อัปโหลด E-Book สำเร็จ');
-            } catch (e) { console.error(e); }
+                document.getElementById('eb-cover-file').value = '';
+                document.getElementById('eb-pdf-file').value = '';
+                showToast('อัปโหลด E-Book เข้าคลังสำเร็จ!');
+            } catch (e) {
+                console.error(e);
+                showToast('อัปโหลดล้มเหลว กรุณาเช็ค Storage Rules', 'error');
+            }
+
+            btn.innerHTML = '<i data-lucide="upload" class="w-4 h-4 mr-2"></i> ยืนยันการอัปโหลด';
+            btn.disabled = false;
+            btn.classList.replace('bg-yellow-600', 'bg-gray-700');
+            lucide.createIcons();
         };
 
         function setupFirebaseEbooks() {
-            const { db, collection, query, orderBy, onSnapshot } = window.firebaseTools;
+            const { db, collection, query, orderBy, onSnapshot } = window.fb;
             const container = document.getElementById('ebooks-container');
 
-            onSnapshot(query(collection(db, "ebooks"), orderBy("timestamp", "desc")), (snapshot) => {
+            onSnapshot(query(collection(db, "ebooks"), orderBy("timestamp", "desc")), (snap) => {
                 container.innerHTML = '';
-                if (snapshot.empty) return container.innerHTML = '<div class="text-gray-500 text-xs col-span-full py-4">ยังไม่มี E-Book ในระบบ</div>';
+                if (snap.empty) return container.innerHTML = '<div class="text-gray-500 text-xs col-span-full py-4 text-center">คลังหนังสือว่างเปล่า</div>';
 
-                snapshot.forEach((doc) => {
+                snap.forEach((doc) => {
                     const eb = doc.data();
                     container.innerHTML += `
-                        <a href="${eb.link}" target="_blank" class="glass-panel p-2 rounded-xl border border-gray-800 hover:border-neon-500/50 transition group block">
-                            <div class="h-24 w-full rounded-lg overflow-hidden relative mb-2">
-                                <img src="${eb.img}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500 opacity-80 group-hover:opacity-100">
-                                <div class="absolute inset-0 bg-gradient-to-t from-dark-950 to-transparent"></div>
-                                <span class="absolute bottom-1 left-1 bg-red-600 text-white text-[8px] px-1.5 py-0.5 rounded uppercase font-bold">PDF</span>
+                        <a href="${eb.link}" target="_blank" class="glass-panel p-2.5 rounded-2xl border border-gray-800/80 hover:border-neon-500/60 hover:shadow-[0_0_20px_rgba(6,182,212,0.2)] transition-all group block transform hover:-translate-y-1 bg-dark-900/40">
+                            <div class="h-32 w-full rounded-xl overflow-hidden relative mb-3 shadow-inner">
+                                <img src="${eb.img}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500 opacity-90 group-hover:opacity-100">
+                                <div class="absolute inset-0 bg-gradient-to-t from-dark-950 via-transparent to-transparent opacity-80"></div>
+                                <span class="absolute bottom-1.5 left-1.5 bg-red-600 text-white text-[9px] px-2 py-0.5 rounded-md uppercase font-black shadow-md flex items-center"><i data-lucide="file-text" class="w-3 h-3 mr-1"></i> PDF</span>
                             </div>
-                            <h4 class="text-xs text-gray-300 font-medium truncate group-hover:text-neon-400 transition">${eb.title}</h4>
+                            <h4 class="text-xs text-gray-300 font-semibold truncate group-hover:text-neon-400 transition-colors px-1 tracking-wide">${eb.title}</h4>
                         </a>
                     `;
                 });
+                lucide.createIcons();
             });
-        }
-
-        // ==========================================
-        // FIREBASE: STATS (จำลองยอดเข้าชม)
-        // ==========================================
-        async function recordVisit() {
-            try {
-                const { db, doc, updateDoc, increment } = window.firebaseTools;
-                // สร้าง document ชื่อ 'main' ใน collection 'stats' ไว้ล่วงหน้าใน Firebase
-                // หรือใช้ setDoc กับ merge: true ถ้าทำระบบใหญ่ แต่ในที่นี้จำลองการบวกเลข
-                const statRef = doc(db, "stats", "main");
-                await updateDoc(statRef, { totalVisits: increment(1) }).catch(e => console.log("Stat collection might not exist yet, ignoring."));
-            } catch (error) { /* Ignore stats error for normal users */ }
-        }
-
-        function setupAdminStats() {
-            const { db, doc, onSnapshot } = window.firebaseTools;
-            const statTotal = document.getElementById('stat-total');
-            const statOnline = document.getElementById('stat-online');
-
-            // ดึงยอดรวม
-            onSnapshot(doc(db, "stats", "main"), (docSnap) => {
-                if (docSnap.exists()) {
-                    statTotal.innerText = docSnap.data().totalVisits || 0;
-                }
-            });
-
-            // จำลองยอดออนไลน์ขยับไปมาให้ดูสมจริง (เนื่องจาก Firebase ฝั่ง Client ไม่มีระบบ Presence แท้)
-            setInterval(() => {
-                let base = parseInt(statTotal.innerText) > 50 ? 12 : 3;
-                let randomOscillate = Math.floor(Math.random() * 5) - 2; // -2 to +2
-                statOnline.innerText = Math.max(1, base + randomOscillate);
-            }, 5000);
         }
 
         // --- UTILS ---
-        function showToast(message, type = 'success') {
-            const container = document.getElementById('toast-container');
+        function showToast(m, t = 'success') {
+            const c = document.getElementById('toast-container');
             const toast = document.createElement('div');
-            toast.className = `toast-enter flex items-center p-3 border-l-2 rounded bg-dark-900 border-neon-500 text-white text-xs shadow-[0_0_15px_rgba(0,0,0,0.5)]`;
-            if(type === 'error') toast.className = toast.className.replace('border-neon-500', 'border-red-500 text-red-400');
-            if(type === 'info') toast.className = toast.className.replace('border-neon-500', 'border-accent-500');
-            toast.innerHTML = message;
-            container.appendChild(toast);
+            toast.className = `toast-enter flex items-center p-3.5 border-l-4 rounded-lg bg-dark-900/90 backdrop-blur border-neon-500 text-white text-xs font-medium shadow-[0_5px_20px_rgba(0,0,0,0.5)]`;
+            if(t === 'error') toast.className = toast.className.replace('border-neon-500', 'border-red-500 text-red-400');
+            if(t === 'info') toast.className = toast.className.replace('border-neon-500', 'border-accent-500 text-accent-100');
+            toast.innerHTML = m;
+            c.appendChild(toast);
             requestAnimationFrame(() => { toast.classList.remove('toast-enter'); toast.classList.add('toast-enter-active'); });
-            setTimeout(() => { toast.classList.add('toast-exit'); setTimeout(() => toast.remove(), 300); }, 3000);
+            setTimeout(() => { toast.classList.add('toast-exit'); setTimeout(() => toast.remove(), 400); }, 3500);
         }
-
-        document.getElementById('mobile-menu-btn').addEventListener('click', () => {
-            document.getElementById('sidebar').classList.toggle('-translate-x-full');
-        });
-
+        document.getElementById('mobile-menu-btn').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('-translate-x-full'));
     </script>
 </body>
 </html>
