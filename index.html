@@ -1,435 +1,554 @@
-```html
 <!DOCTYPE html>
-<html lang="th" class="dark scroll-smooth">
+<html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FXPro Premium - Real-time Signals & Admin System</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <title>EliteTrade Pro - Realtime Forex แดชบอร์ด</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- ========================================== -->
+    <!-- FIREBASE SDK (เชื่อมต่อของจริง) -->
+    <!-- ========================================== -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Config ของคุณที่ได้มาจาก Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyA7sVZ-RY491b0UFvdQa4YGp9DuB26m3As",
+            authDomain: "trading-c7468.firebaseapp.com",
+            projectId: "trading-c7468",
+            storageBucket: "trading-c7468.firebasestorage.app",
+            messagingSenderId: "282953779414",
+            appId: "1:282953779414:web:3a332a7c20d7342c03e177"
+        };
+
+        // เริ่มต้นการเชื่อมต่อ Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // ส่งฟังก์ชัน Firestore ไปให้ JavaScript หลักใช้งานได้
+        window.firebaseTools = {
+            db, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc
+        };
+    </script>
 
     <script>
         tailwind.config = {
-            darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Prompt', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
+                    fontFamily: { prompt: ['Prompt', 'sans-serif'] },
                     colors: {
-                        primary: '#00f3ff', secondary: '#00ff88', danger: '#ff0055',
-                        dark: '#0a0e17', darker: '#05070a', card: '#111827', gold: '#F59E0B'
+                        gold: { 400: '#FDE047', 500: '#EAB308', 600: '#CA8A04' },
+                        dark: { 800: '#111827', 900: '#030712', 950: '#000000' }
+                    },
+                    animation: { 'marquee': 'marquee 25s linear infinite' },
+                    keyframes: {
+                        marquee: { '0%': { transform: 'translateX(100%)' }, '100%': { transform: 'translateX(-100%)' } }
                     }
                 }
             }
         }
     </script>
     <style>
-        body { background-color: #05070a; color: #f3f4f6; }
-        .glass-panel { background: rgba(17, 24, 39, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
-        .signal-card { transition: all 0.3s ease; }
-        .signal-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+        body { font-family: 'Prompt', sans-serif; background-color: #030712; color: #f3f4f6; overflow-x: hidden; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #111827; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #EAB308; }
         
-        /* Status Animations */
-        .status-pending { border-left: 4px solid #F59E0B; }
-        .status-active { border-left: 4px solid #00f3ff; animation: glowActive 2s infinite; }
-        .status-tp { border-left: 4px solid #00ff88; background: rgba(0, 255, 136, 0.05); }
-        .status-sl { border-left: 4px solid #ff0055; background: rgba(255, 0, 85, 0.05); }
-        
-        @keyframes glowActive {
-            0%, 100% { box-shadow: -2px 0 10px rgba(0, 243, 255, 0.2); }
-            50% { box-shadow: -2px 0 20px rgba(0, 243, 255, 0.6); }
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(234, 179, 8, 0.1);
         }
+        .fade-in { animation: fadeIn 0.4s ease-in-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .toast-enter { transform: translateX(100%); opacity: 0; }
+        .toast-enter-active { transform: translateX(0); opacity: 1; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .toast-exit { transform: translateX(100%); opacity: 0; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        .ticker-wrap { width: 100%; overflow: hidden; background-color: #000; border-bottom: 1px solid #333; height: 35px; display: flex; align-items: center; }
+        .ticker-move { display: inline-block; white-space: nowrap; padding-right: 100%; box-sizing: content-box; }
+        .ticker-item { display: inline-block; padding: 0 2rem; font-size: 0.85rem; color: #ccc; }
+        .ticker-item span.up { color: #10B981; }
+        .ticker-item span.down { color: #EF4444; }
     </style>
 </head>
-<body class="flex flex-col min-h-screen">
+<body class="antialiased selection:bg-gold-500 selection:text-dark-900">
 
-    <!-- Navbar -->
-    <nav class="glass-panel sticky top-0 w-full z-50 border-b border-gray-800 py-3">
-        <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-dark border border-primary flex items-center justify-center">
-                    <i class="fa-solid fa-satellite-dish text-primary text-xl animate-pulse"></i>
-                </div>
-                <span class="text-xl font-extrabold tracking-widest">FX<span class="text-primary">SIGNAL</span></span>
-            </div>
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3 pointer-events-none"></div>
 
-            <!-- Profile Area -->
-            <div class="flex items-center gap-4">
-                <div class="text-right hidden sm:block">
-                    <div id="displayRole" class="text-[10px] font-mono text-gray-400 uppercase">Loading Role...</div>
-                    <div id="displayName" class="text-sm font-bold text-white">Guest</div>
-                </div>
-                <img id="displayAvatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Guest" class="w-9 h-9 rounded-full bg-gray-800 border-2 border-gray-600">
-            </div>
-        </div>
-    </nav>
-
-    <main class="flex-1 max-w-7xl mx-auto w-full p-4 flex flex-col gap-6 mt-4">
+    <!-- ================= LOGIN VIEW ================= -->
+    <div id="login-view" class="min-h-screen flex items-center justify-center bg-[url('https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center relative">
+        <div class="absolute inset-0 bg-dark-900/85 backdrop-blur-sm"></div>
         
-        <!-- DEMO TOOL: สลับ Role (ลบออกได้ในการใช้งานจริง) -->
-        <div class="bg-yellow-900/30 border border-yellow-500/50 p-4 rounded-xl flex justify-between items-center">
-            <div>
-                <h3 class="text-yellow-400 font-bold text-sm"><i class="fa-solid fa-flask"></i> Demo Control (โหมดทดสอบ)</h3>
-                <p class="text-xs text-gray-400">กดปุ่มเพื่อจำลองการสลับสิทธิ์ระหว่าง ผู้ใช้ทั่วไป (User) และ ผู้ดูแลระบบ (Admin)</p>
+        <div class="glass-panel p-8 md:p-10 rounded-2xl shadow-2xl z-10 w-full max-w-md mx-4 relative overflow-hidden fade-in border-t-2 border-t-gold-500">
+            <div class="text-center mb-8">
+                <div id="logo-trigger" class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-dark-800 border border-gold-500/30 text-gold-500 mb-4 cursor-pointer select-none transition-transform active:scale-95 shadow-[0_0_15px_rgba(234,179,8,0.2)]">
+                    <i data-lucide="activity" class="w-8 h-8"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-white tracking-wide">Elite<span class="text-gold-500">Trade</span> <span class="text-sm text-gray-400 font-normal">PRO</span></h1>
+                <p class="text-gray-400 mt-2 text-sm">Real-time Platform by Firebase</p>
             </div>
-            <button id="btnToggleRole" class="bg-yellow-500 hover:bg-yellow-400 text-dark font-bold px-4 py-2 rounded-lg text-sm transition shadow-lg">
-                <i class="fa-solid fa-user-shield"></i> สลับเป็น Admin
-            </button>
+
+            <form id="login-form" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">อีเมล</label>
+                    <div class="relative">
+                        <i data-lucide="mail" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500"></i>
+                        <input type="email" id="login-email" class="w-full bg-dark-900 border border-gray-700 rounded-lg py-3 pl-10 pr-4 text-white focus:outline-none focus:border-gold-500 transition-colors" placeholder="user@example.com" required>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">รหัสผ่าน</label>
+                    <div class="relative">
+                        <i data-lucide="lock" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500"></i>
+                        <input type="password" id="login-password" class="w-full bg-dark-900 border border-gray-700 rounded-lg py-3 pl-10 pr-4 text-white focus:outline-none focus:border-gold-500 transition-colors" placeholder="••••••••" required>
+                    </div>
+                </div>
+
+                <!-- Admin Secret Area -->
+                <div id="admin-secret-area" class="hidden pt-4 border-t border-gray-700 mt-4">
+                    <p class="text-xs text-gold-500 mb-2 font-medium flex items-center"><i data-lucide="shield-alert" class="w-4 h-4 mr-1"></i> โหมดผู้ดูแลระบบ</p>
+                    <div class="relative">
+                        <i data-lucide="key" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gold-500"></i>
+                        <input type="password" id="admin-key" class="w-full bg-dark-900 border border-gold-500/50 rounded-lg py-3 pl-10 pr-4 text-white focus:outline-none focus:border-gold-500 transition-colors" placeholder="Admin Secret Key">
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-gold-600 hover:bg-gold-500 text-dark-900 font-bold py-3 px-4 rounded-lg transition-all duration-300 shadow-lg flex items-center justify-center mt-2">
+                    <i data-lucide="log-in" class="w-5 h-5 mr-2"></i> เข้าสู่ระบบ
+                </button>
+            </form>
+            <div class="mt-4 text-center text-[10px] text-gray-500">
+                (จำลอง) คลิกโลโก้ 5 ครั้ง เพื่อเปิดช่องใส่รหัส Admin (รหัสคือ admin123)
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= DASHBOARD VIEW ================= -->
+    <div id="dashboard-view" class="hidden min-h-screen flex flex-col">
+        
+        <!-- Real-time Ticker Tape (Market Prices) -->
+        <div class="ticker-wrap hidden md:flex">
+            <div class="ticker-move animate-marquee">
+                <div class="ticker-item font-mono font-medium">EURUSD <span class="up">1.0850 ▲</span></div>
+                <div class="ticker-item font-mono font-medium">GBPUSD <span class="down">1.2640 ▼</span></div>
+                <div class="ticker-item font-mono font-medium">USDJPY <span class="up">151.20 ▲</span></div>
+                <div class="ticker-item font-mono font-medium">XAUUSD <span class="up">2345.60 ▲</span></div>
+                <div class="ticker-item font-mono font-medium">BTCUSD <span class="down">64200.00 ▼</span></div>
+                <div class="ticker-item font-mono font-medium">US30 <span class="up">38900.50 ▲</span></div>
+                <div class="ticker-item font-mono font-medium">OIL <span class="down">82.30 ▼</span></div>
+            </div>
         </div>
 
-        <!-- ================= ADMIN PANEL (แสดงเฉพาะ Admin) ================= -->
-        <section id="adminPanel" class="hidden glass-panel rounded-2xl p-6 border-primary/50 relative overflow-hidden">
-            <div class="absolute top-0 right-0 bg-primary text-dark text-xs font-bold px-3 py-1 rounded-bl-xl"><i class="fa-solid fa-crown"></i> ADMIN ONLY</div>
-            <h2 class="text-xl font-bold text-white mb-4"><i class="fa-solid fa-plus-circle text-primary"></i> แผงควบคุมผู้พัฒนา (สร้าง Signal)</h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 text-sm">
-                <div>
-                    <label class="block text-gray-400 mb-1">คู่เหรียญ (Symbol)</label>
-                    <input type="text" id="sigSymbol" placeholder="เช่น BTCUSDT" class="w-full bg-dark border border-gray-700 rounded-lg p-2.5 text-white uppercase" value="BTCUSDT">
+        <div class="flex-1 flex flex-col md:flex-row h-[calc(100vh-35px)]">
+            <!-- Mobile Header -->
+            <div class="md:hidden glass-panel sticky top-0 z-40 flex justify-between items-center p-4 border-b border-gray-800">
+                <div class="flex items-center text-xl font-bold text-white">
+                    <i data-lucide="activity" class="w-6 h-6 text-gold-500 mr-2"></i> Elite<span class="text-gold-500">Trade</span>
                 </div>
-                <div>
-                    <label class="block text-gray-400 mb-1">ฝั่ง (Type)</label>
-                    <select id="sigType" class="w-full bg-dark border border-gray-700 rounded-lg p-2.5 text-white">
-                        <option value="BUY" class="text-secondary">BUY (Long)</option>
-                        <option value="SELL" class="text-danger">SELL (Short)</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-gray-400 mb-1">จุดเข้า (Entry Price)</label>
-                    <input type="number" id="sigEntry" placeholder="ราคาเข้า" class="w-full bg-dark border border-gray-700 rounded-lg p-2.5 text-white">
-                </div>
-                <div>
-                    <label class="block text-gray-400 mb-1">ทำกำไร (Take Profit)</label>
-                    <input type="number" id="sigTP" placeholder="ราคา TP" class="w-full bg-dark border border-gray-700 rounded-lg p-2.5 text-white border-b-2 border-b-secondary">
-                </div>
-                <div>
-                    <label class="block text-gray-400 mb-1">ตัดขาดทุน (Stop Loss)</label>
-                    <input type="number" id="sigSL" placeholder="ราคา SL" class="w-full bg-dark border border-gray-700 rounded-lg p-2.5 text-white border-b-2 border-b-danger">
-                </div>
-            </div>
-            <button id="btnPostSignal" class="mt-4 bg-primary hover:bg-primaryDark text-dark font-bold px-6 py-2.5 rounded-lg transition shadow-[0_0_15px_rgba(0,243,255,0.3)]">
-                <i class="fa-solid fa-paper-plane"></i> ปล่อยซิกแนลลงระบบ
-            </button>
-        </section>
-
-        <!-- ================= LIVE SIGNAL FEED (แสดงให้ทุกคนเห็น) ================= -->
-        <section>
-            <div class="flex justify-between items-end mb-4">
-                <div>
-                    <h2 class="text-2xl font-bold text-white"><i class="fa-solid fa-bolt text-gold"></i> Live Signals Feed</h2>
-                    <p class="text-sm text-gray-400">ระบบประเมินสถานะไม้เทรดอัตโนมัติอิงจากราคาตลาดโลก (Real-time)</p>
-                </div>
-                <div class="text-right">
-                    <span class="text-xs text-gray-500 block">ตลาดที่กำลังจับตา</span>
-                    <span class="text-sm font-mono text-primary font-bold"><i class="fa-solid fa-circle text-[8px] animate-pulse"></i> Binance WebSockets</span>
-                </div>
+                <button id="mobile-menu-btn" class="text-gray-300 hover:text-white"><i data-lucide="menu" class="w-6 h-6"></i></button>
             </div>
 
-            <!-- Signal List Container -->
-            <div id="signalsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                <!-- Loading State -->
-                <div class="col-span-full text-center py-10 text-gray-500">
-                    <i class="fa-solid fa-spinner fa-spin text-3xl mb-3"></i>
-                    <p>กำลังเชื่อมต่อฐานข้อมูล...</p>
+            <!-- Sidebar -->
+            <aside id="sidebar" class="w-64 glass-panel border-r border-gray-800 flex flex-col fixed md:relative h-full z-40 transition-transform transform -translate-x-full md:translate-x-0">
+                <div class="p-6 hidden md:flex items-center text-2xl font-bold text-white border-b border-gray-800">
+                    <i data-lucide="activity" class="w-7 h-7 text-gold-500 mr-2"></i> Elite<span class="text-gold-500">Trade</span>
                 </div>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- ================= JAVASCRIPT ================= -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, addDoc, onSnapshot, query, updateDoc, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        let db, auth, currentUser;
-        let userProfile = { role: 'user', name: 'Guest' };
-        let livePrices = {};
-        let activeSignals = []; // เก็บซิกแนลในหน่วยความจำ
-        let appId = typeof __app_id !== 'undefined' ? __app_id : 'fxpro-signals-app';
-
-        // 1. INIT FIREBASE
-        async function initApp() {
-            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-            if (!firebaseConfig) return alert("Firebase Config Missing. Run in Immersive environment.");
-            
-            const app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-
-            // RULE 3: Auth First
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-                await signInAnonymously(auth);
-            }
-
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    currentUser = user;
-                    await loadUserProfile();
-                    startMarketTicker(); // เริ่มดึงราคา
-                    listenToSignals();   // เริ่มโหลดซิกแนล
-                }
-            });
-        }
-
-        // 2. LOAD USER PROFILE & RBAC (Role-Based Access Control)
-        async function loadUserProfile() {
-            try {
-                // RULE 1: Private Path
-                const profileRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'info');
-                const docSnap = await getDoc(profileRef);
                 
-                if (docSnap.exists()) {
-                    userProfile = docSnap.data();
-                } else {
-                    // สร้างโปรไฟล์พื้นฐานให้ถ้ายังไม่มี (ค่าเริ่มต้นคือ 'user')
-                    userProfile = { role: 'user', name: `Trader_${currentUser.uid.substring(0,4)}` };
-                    await setDoc(profileRef, userProfile);
-                }
-                updateUIForRole();
-            } catch (e) { console.error("Profile Error:", e); }
-        }
-
-        function updateUIForRole() {
-            document.getElementById('displayName').innerText = userProfile.name;
-            const roleEl = document.getElementById('displayRole');
-            const adminPanel = document.getElementById('adminPanel');
-            const btnToggleRole = document.getElementById('btnToggleRole');
-            
-            if (userProfile.role === 'admin') {
-                roleEl.innerText = "Developer (Admin)";
-                roleEl.className = "text-[10px] font-mono text-gold font-bold uppercase";
-                document.getElementById('displayAvatar').classList.add('border-gold');
-                adminPanel.classList.remove('hidden'); // โชว์แผงควบคุม
-                
-                btnToggleRole.innerHTML = '<i class="fa-solid fa-user"></i> กลับเป็น User';
-                btnToggleRole.className = "bg-gray-600 hover:bg-gray-500 text-white font-bold px-4 py-2 rounded-lg text-sm transition";
-            } else {
-                roleEl.innerText = "General User";
-                roleEl.className = "text-[10px] font-mono text-gray-400 uppercase";
-                document.getElementById('displayAvatar').classList.remove('border-gold');
-                adminPanel.classList.add('hidden'); // ซ่อนแผงควบคุม
-                
-                btnToggleRole.innerHTML = '<i class="fa-solid fa-user-shield"></i> สลับเป็น Admin';
-                btnToggleRole.className = "bg-yellow-500 hover:bg-yellow-400 text-dark font-bold px-4 py-2 rounded-lg text-sm transition shadow-lg";
-            }
-        }
-
-        // --- Demo Toggle Role Feature ---
-        document.getElementById('btnToggleRole').addEventListener('click', async () => {
-            const newRole = userProfile.role === 'admin' ? 'user' : 'admin';
-            try {
-                const profileRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'info');
-                await updateDoc(profileRef, { role: newRole });
-                userProfile.role = newRole;
-                updateUIForRole();
-            } catch (e) { console.error("Toggle Role Error", e); }
-        });
-
-        // 3. ADMIN POST SIGNAL
-        document.getElementById('btnPostSignal').addEventListener('click', async () => {
-            if (userProfile.role !== 'admin') return alert("ไม่อนุญาตเฉพาะ Admin เท่านั้น");
-            
-            const symbol = document.getElementById('sigSymbol').value.trim().toUpperCase();
-            const type = document.getElementById('sigType').value;
-            const entry = parseFloat(document.getElementById('sigEntry').value);
-            const tp = parseFloat(document.getElementById('sigTP').value);
-            const sl = parseFloat(document.getElementById('sigSL').value);
-
-            if (!symbol || !entry || !tp || !sl) return alert("กรอกข้อมูลให้ครบถ้วน");
-
-            try {
-                const btn = document.getElementById('btnPostSignal');
-                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังส่ง...';
-                
-                // RULE 1 & 2: Public Path for global feed
-                const signalsRef = collection(db, 'artifacts', appId, 'public', 'data', 'signals');
-                await addDoc(signalsRef, {
-                    symbol: symbol, type: type,
-                    entry: entry, tp: tp, sl: sl,
-                    status: 'PENDING', // สถานะเริ่มต้น
-                    author: userProfile.name,
-                    timestamp: Date.now() // ใช้ Timestamp ตัวเลขเพื่อง่ายต่อการเรียงใน JS
-                });
-
-                document.getElementById('sigEntry').value = '';
-                document.getElementById('sigTP').value = '';
-                document.getElementById('sigSL').value = '';
-                btn.innerHTML = '<i class="fa-solid fa-check"></i> ส่งซิกสำเร็จ';
-                setTimeout(() => btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> ปล่อยซิกแนลลงระบบ', 2000);
-            } catch (e) { console.error(e); alert("เกิดข้อผิดพลาด"); }
-        });
-
-        // 4. LISTEN & RENDER SIGNALS
-        function listenToSignals() {
-            const signalsRef = collection(db, 'artifacts', appId, 'public', 'data', 'signals');
-            // RULE 2: Simple Query (No complex order by to avoid missing indexes)
-            const q = query(signalsRef);
-            
-            onSnapshot(q, (snapshot) => {
-                activeSignals = [];
-                snapshot.forEach(doc => {
-                    activeSignals.push({ id: doc.id, ...doc.data() });
-                });
-                
-                // Sort locally by time (newest first)
-                activeSignals.sort((a, b) => b.timestamp - a.timestamp);
-                renderSignals();
-            });
-        }
-
-        function renderSignals() {
-            const container = document.getElementById('signalsContainer');
-            if (activeSignals.length === 0) {
-                container.innerHTML = `<div class="col-span-full text-center py-10 text-gray-500 border border-dashed border-gray-700 rounded-xl"><i class="fa-solid fa-box-open text-4xl mb-3"></i><p>ยังไม่มี Signal ในระบบขณะนี้</p></div>`;
-                return;
-            }
-
-            let html = '';
-            activeSignals.forEach(sig => {
-                const livePrice = livePrices[sig.symbol] || 'Loading...';
-                
-                // Style Configuration based on Status
-                let statusUI = '';
-                let borderClass = '';
-                
-                if (sig.status === 'PENDING') {
-                    borderClass = 'status-pending';
-                    statusUI = `<div class="text-gold font-bold text-sm bg-yellow-500/10 px-3 py-1 rounded-full"><i class="fa-solid fa-hourglass-half"></i> รอเข้าโซน (Pending)</div>`;
-                } else if (sig.status === 'ACTIVE') {
-                    borderClass = 'status-active';
-                    statusUI = `<div class="text-primary font-bold text-sm bg-primary/10 px-3 py-1 rounded-full"><i class="fa-solid fa-bolt animate-pulse"></i> Active (กำลังวิ่ง)</div>`;
-                } else if (sig.status === 'TP') {
-                    borderClass = 'status-tp';
-                    statusUI = `<div class="text-secondary font-black text-sm bg-secondary/10 px-3 py-1 rounded-full border border-secondary/50"><i class="fa-solid fa-circle-check"></i> TP HIT วินเรท! ✔️</div>`;
-                } else if (sig.status === 'SL') {
-                    borderClass = 'status-sl';
-                    statusUI = `<div class="text-danger font-black text-sm bg-danger/10 px-3 py-1 rounded-full border border-danger/50"><i class="fa-solid fa-circle-xmark"></i> SL HIT ❌</div>`;
-                }
-
-                const typeColor = sig.type === 'BUY' ? 'text-secondary' : 'text-danger';
-                const typeIcon = sig.type === 'BUY' ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down';
-
-                html += `
-                    <div class="glass-panel p-5 rounded-2xl signal-card ${borderClass} flex flex-col gap-4 relative overflow-hidden">
-                        ${sig.status === 'TP' ? '<div class="absolute inset-0 bg-green-500/5 z-0"></div>' : ''}
-                        ${sig.status === 'SL' ? '<div class="absolute inset-0 bg-red-500/5 z-0"></div>' : ''}
-                        
-                        <div class="relative z-10 flex justify-between items-start">
-                            <div>
-                                <h3 class="text-xl font-bold font-mono text-white">${sig.symbol}</h3>
-                                <div class="text-xs text-gray-400 mt-1">โดย Admin: ${sig.author}</div>
-                            </div>
-                            <div class="${typeColor} font-black bg-black/40 px-3 py-1 rounded border border-gray-800">
-                                <i class="fa-solid ${typeIcon}"></i> ${sig.type}
-                            </div>
-                        </div>
-
-                        <div class="relative z-10 grid grid-cols-3 gap-2 text-center text-sm bg-darker p-3 rounded-xl border border-gray-800">
-                            <div>
-                                <span class="block text-[10px] text-gray-500 uppercase">Entry</span>
-                                <span class="font-bold text-white">${sig.entry}</span>
-                            </div>
-                            <div>
-                                <span class="block text-[10px] text-gray-500 uppercase">Take Profit</span>
-                                <span class="font-bold text-secondary">${sig.tp}</span>
-                            </div>
-                            <div>
-                                <span class="block text-[10px] text-gray-500 uppercase">Stop Loss</span>
-                                <span class="font-bold text-danger">${sig.sl}</span>
-                            </div>
-                        </div>
-
-                        <div class="relative z-10 flex justify-between items-center mt-2 border-t border-gray-800 pt-4">
-                            <div>
-                                <span class="text-[10px] text-gray-500 block mb-0.5">ราคาปัจจุบัน (Live)</span>
-                                <span class="font-mono font-bold text-lg text-white" id="live-${sig.id}">${typeof livePrice === 'number' ? livePrice.toLocaleString() : livePrice}</span>
-                            </div>
-                            <div>${statusUI}</div>
+                <div class="p-5 border-b border-gray-800">
+                    <div class="flex items-center space-x-3">
+                        <img id="sidebar-avatar" src="" alt="Avatar" class="w-10 h-10 rounded-full border border-gold-500">
+                        <div>
+                            <p id="sidebar-name" class="text-white font-medium text-sm">User</p>
+                            <p id="sidebar-role" class="text-[10px] text-gold-500 border border-gold-500/30 px-1.5 py-0.5 rounded mt-0.5 inline-block">Member</p>
                         </div>
                     </div>
-                `;
-            });
-            container.innerHTML = html;
+                </div>
+
+                <nav class="flex-1 p-4 space-y-1 overflow-y-auto text-sm">
+                    <a href="#" class="flex items-center text-gold-500 bg-gold-500/10 px-3 py-2.5 rounded-lg">
+                        <i data-lucide="pie-chart" class="w-4 h-4 mr-3"></i> ตลาดเรียลไทม์
+                    </a>
+                    <a href="#signals-section" class="flex items-center text-gray-400 hover:text-white hover:bg-dark-800 px-3 py-2.5 rounded-lg transition-colors">
+                        <i data-lucide="zap" class="w-4 h-4 mr-3 text-yellow-400"></i> สัญญาณเทรด (Firebase)
+                    </a>
+                    <a href="#news-section" class="flex items-center text-gray-400 hover:text-white hover:bg-dark-800 px-3 py-2.5 rounded-lg transition-colors">
+                        <i data-lucide="globe" class="w-4 h-4 mr-3 text-blue-400"></i> ข่าวสารตลาดโลก
+                    </a>
+                    <a href="#ebook-section" class="flex items-center text-gray-400 hover:text-white hover:bg-dark-800 px-3 py-2.5 rounded-lg transition-colors">
+                        <i data-lucide="book" class="w-4 h-4 mr-3"></i> คลัง E-Book
+                    </a>
+                </nav>
+
+                <div class="p-4 border-t border-gray-800">
+                    <button id="logout-btn" class="flex items-center w-full text-gray-400 hover:text-red-400 text-sm px-3 py-2 rounded-lg transition-colors">
+                        <i data-lucide="log-out" class="w-4 h-4 mr-3"></i> ออกจากระบบ
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="flex-1 p-4 md:p-6 overflow-y-auto w-full scroll-smooth">
+                
+                <div class="flex flex-col lg:flex-row gap-6 mb-8">
+                    <!-- Left Column: Chart -->
+                    <div class="lg:w-2/3 flex flex-col gap-4 fade-in">
+                        <div class="flex justify-between items-center">
+                            <h2 class="text-xl font-bold text-white">Live Chart (TradingView)</h2>
+                            <div class="flex bg-dark-800 p-1 rounded-md border border-gray-700">
+                                <button onclick="changeAsset('OANDA:XAUUSD', this)" class="px-3 py-1.5 text-xs font-medium rounded text-dark-900 bg-gold-500 transition-all">XAUUSD</button>
+                                <button onclick="changeAsset('OANDA:EURUSD', this)" class="px-3 py-1.5 text-xs font-medium rounded text-gray-400 hover:text-white transition-all">EURUSD</button>
+                                <button onclick="changeAsset('BINANCE:BTCUSD', this)" class="px-3 py-1.5 text-xs font-medium rounded text-gray-400 hover:text-white transition-all">BTCUSD</button>
+                            </div>
+                        </div>
+                        <div class="glass-panel rounded-xl overflow-hidden border border-gray-800 shadow-lg h-[450px]">
+                            <div id="tradingview-container" class="w-full h-full"></div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: MM & News -->
+                    <div class="lg:w-1/3 flex flex-col gap-6 fade-in" style="animation-delay: 0.1s;">
+                        <!-- Lot Calculator -->
+                        <div class="glass-panel rounded-xl p-5 border border-gray-800">
+                            <h3 class="text-sm font-bold text-white mb-4 flex items-center"><i data-lucide="calculator" class="w-4 h-4 text-gold-500 mr-2"></i> คำนวณ Lot (MM)</h3>
+                            <div class="grid grid-cols-2 gap-3 mb-3">
+                                <div><label class="text-xs text-gray-400 block mb-1">ทุน ($)</label><input type="number" id="calc-balance" value="1000" class="w-full bg-dark-900 border border-gray-700 rounded p-2 text-white text-sm"></div>
+                                <div><label class="text-xs text-gray-400 block mb-1">SL (Pips)</label><input type="number" id="calc-sl" value="30" class="w-full bg-dark-900 border border-gray-700 rounded p-2 text-white text-sm"></div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2 mb-4">
+                                <button onclick="calculateLot(0.01)" class="py-1.5 rounded bg-green-500/10 text-green-500 border border-green-500/30 text-xs">Low (1%)</button>
+                                <button onclick="calculateLot(0.05)" class="py-1.5 rounded bg-yellow-500/10 text-yellow-500 border border-yellow-500/30 text-xs">Mid (5%)</button>
+                                <button onclick="calculateLot(1.00)" class="py-1.5 rounded bg-red-500/10 text-red-500 border border-red-500/30 text-xs font-bold">ALL IN</button>
+                            </div>
+                            <div class="bg-dark-900 p-3 rounded-lg border border-gold-500/30 text-center">
+                                <p class="text-xs text-gray-500">Lot ที่แนะนำ</p>
+                                <p id="calc-result" class="text-2xl font-bold text-gold-500">0.00</p>
+                            </div>
+                        </div>
+
+                        <!-- Real-time News -->
+                        <div id="news-section" class="glass-panel rounded-xl p-5 border border-gray-800 flex-1 flex flex-col">
+                            <h3 class="text-sm font-bold text-white mb-3 flex items-center justify-between">
+                                <span class="flex items-center"><i data-lucide="rss" class="w-4 h-4 text-blue-400 mr-2"></i> ข่าวเศรษฐกิจ</span>
+                                <span class="flex h-2 w-2 relative">
+                                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                  <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                                </span>
+                            </h3>
+                            <div id="news-container" class="space-y-3 overflow-y-auto pr-2 max-h-[220px]"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Signals Section (Firebase Structure) -->
+                <div id="signals-section" class="mb-10 fade-in" style="animation-delay: 0.2s;">
+                    <div class="flex justify-between items-center mb-4 border-b border-gray-800 pb-2">
+                        <h3 class="text-xl font-bold text-white flex items-center">
+                            <i data-lucide="zap" class="w-5 h-5 text-yellow-400 mr-2"></i> 
+                            สัญญาณเทรด <span class="text-xs font-normal bg-green-500/20 text-green-400 px-2 py-0.5 rounded ml-2 border border-green-500/30">Live Sync 🔴</span>
+                        </h3>
+                        <button id="btn-add-signal" class="hidden bg-gold-500 hover:bg-gold-400 text-dark-900 text-xs font-bold py-1.5 px-3 rounded shadow transition">
+                            + แจกซิกแนล
+                        </button>
+                    </div>
+
+                    <!-- Admin Signal Form -->
+                    <div id="admin-signal-form" class="hidden glass-panel p-5 rounded-lg mb-4 border border-gold-500/40 bg-gold-500/5">
+                        <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
+                            <div class="md:col-span-1"><input type="text" id="sig-asset" placeholder="คู่เงิน" class="w-full bg-dark-900 border border-gray-700 rounded p-2 text-white text-xs uppercase"></div>
+                            <div class="md:col-span-1"><select id="sig-type" class="w-full bg-dark-900 border border-gray-700 rounded p-2 text-white text-xs"><option value="BUY">BUY</option><option value="SELL">SELL</option></select></div>
+                            <div class="md:col-span-1"><input type="number" id="sig-entry" placeholder="Entry" class="w-full bg-dark-900 border border-gray-700 rounded p-2 text-white text-xs"></div>
+                            <div class="md:col-span-1"><input type="number" id="sig-tp" placeholder="TP" class="w-full bg-dark-900 border border-gray-700 rounded p-2 text-white text-xs"></div>
+                            <div class="md:col-span-1"><input type="number" id="sig-sl" placeholder="SL" class="w-full bg-dark-900 border border-gray-700 rounded p-2 text-white text-xs"></div>
+                            <div class="md:col-span-1"><button onclick="postSignalToFirebase()" class="w-full h-full bg-gold-500 text-dark-900 text-xs font-bold rounded">ส่งสัญญาณ</button></div>
+                        </div>
+                    </div>
+
+                    <div id="signals-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div class="text-center text-gray-500 text-sm col-span-full py-8"><i data-lucide="loader" class="w-6 h-6 animate-spin mx-auto mb-2"></i> กำลังเชื่อมต่อฐานข้อมูล Firebase...</div>
+                    </div>
+                </div>
+                
+                <!-- PDF Section -->
+                <div id="ebook-section" class="mb-8 fade-in" style="animation-delay: 0.3s;">
+                    <h3 class="text-xl font-bold text-white flex items-center mb-4 border-b border-gray-800 pb-2">
+                        <i data-lucide="book" class="w-5 h-5 text-gold-500 mr-2"></i> คลัง E-Book
+                    </h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="glass-panel p-4 rounded-lg border border-gray-800 flex flex-col items-center text-center cursor-pointer hover:border-gold-500 transition">
+                            <i data-lucide="file-text" class="w-10 h-10 text-red-500 mb-2"></i>
+                            <h4 class="text-sm text-white font-medium">Price Action PDF</h4>
+                            <p class="text-[10px] text-gray-500 mt-1">2.4 MB</p>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // --- STATE & AUTH ---
+        const state = { user: null, adminClickCount: 0 };
+
+        document.getElementById('logo-trigger').addEventListener('click', () => {
+            state.adminClickCount++;
+            if (state.adminClickCount >= 5) {
+                document.getElementById('admin-secret-area').classList.remove('hidden');
+                showToast('🔑 โหมดผู้ดูแลระบบพร้อมใช้งาน', 'info');
+                state.adminClickCount = 0;
+            }
+        });
+
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const adminKey = document.getElementById('admin-key').value;
+
+            if (adminKey === 'admin123') {
+                state.user = { role: 'admin', name: 'Master Admin', email };
+                showToast('เข้าสู่ระบบสำเร็จ (Administrator)');
+            } else {
+                state.user = { role: 'user', name: email.split('@')[0], email };
+                showToast('เข้าสู่ระบบสำเร็จ');
+            }
+
+            document.getElementById('login-view').classList.add('hidden');
+            document.getElementById('dashboard-view').classList.remove('hidden');
+            initDashboard();
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            state.user = null;
+            document.getElementById('dashboard-view').classList.add('hidden');
+            document.getElementById('login-view').classList.remove('hidden');
+            document.getElementById('login-form').reset();
+            document.getElementById('admin-secret-area').classList.add('hidden');
+        });
+
+        // --- DASHBOARD INIT ---
+        function initDashboard() {
+            document.getElementById('sidebar-name').innerText = state.user.name;
+            document.getElementById('sidebar-role').innerText = state.user.role === 'admin' ? 'Admin' : 'Pro Trader';
+            document.getElementById('sidebar-role').className = state.user.role === 'admin' 
+                ? 'text-[10px] text-red-500 border border-red-500/30 px-1.5 py-0.5 rounded mt-0.5 inline-block'
+                : 'text-[10px] text-gold-500 border border-gold-500/30 px-1.5 py-0.5 rounded mt-0.5 inline-block';
+            document.getElementById('sidebar-avatar').src = `https://ui-avatars.com/api/?name=${state.user.name}&background=${state.user.role==='admin'?'000':'EAB308'}&color=${state.user.role==='admin'?'EF4444':'000'}`;
+
+            if (state.user.role === 'admin') {
+                document.getElementById('btn-add-signal').classList.remove('hidden');
+            }
+
+            loadTradingViewChart('OANDA:XAUUSD');
+            startNewsSimulation();
+            setupFirebaseSignals(); // เรียกใช้ฟังก์ชันเชื่อมต่อ Firestore จริง
         }
 
-        // 5. MARKET TICKER & AUTO EVALUATION
-        function startMarketTicker() {
-            // ดึงราคา Real-time เหรียญทั้งหมดเพื่อมาประเมิน Signal
-            const ws = new WebSocket('wss://stream.binance.com:9443/ws/!miniTicker@arr');
-            
-            ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                
-                // อัปเดตราคาล่าสุด
-                data.forEach(ticker => {
-                    livePrices[ticker.s] = parseFloat(ticker.c);
-                });
+        function loadTradingViewChart(symbol) {
+            const container = document.getElementById('tradingview-container');
+            container.innerHTML = ''; 
+            const widgetDiv = document.createElement('div');
+            widgetDiv.id = `tv-widget-${Date.now()}`;
+            widgetDiv.className = "w-full h-full";
+            container.appendChild(widgetDiv);
 
-                // อัปเดต UI ราคาเฉพาะตัวที่โชว์อยู่
-                activeSignals.forEach(sig => {
-                    const priceEl = document.getElementById(`live-${sig.id}`);
-                    if (priceEl && livePrices[sig.symbol]) {
-                        priceEl.innerText = livePrices[sig.symbol].toLocaleString();
-                    }
+            const script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.src = 'https://s3.tradingview.com/tv.js';
+            script.onload = () => {
+                new TradingView.widget({
+                    "autosize": true, "symbol": symbol, "interval": "15",
+                    "timezone": "Asia/Bangkok", "theme": "dark", "style": "1",
+                    "locale": "th_TH", "enable_publishing": false,
+                    "backgroundColor": "#111827", "gridColor": "#1f2937",
+                    "hide_top_toolbar": false, "container_id": widgetDiv.id
                 });
-
-                // ==========================================
-                // 🔥 ALGORITHM ประเมินสถานะซิกแนล 🔥
-                // เพื่อลดการเขียน DB ทับซ้อน จะให้เฉพาะ 'Admin' เป็นผู้บันทึกสถานะใหม่ลง Cloud
-                // ==========================================
-                if (userProfile.role === 'admin') {
-                    evaluateSignalsAndSave(data);
-                }
             };
+            document.body.appendChild(script);
         }
 
-        function evaluateSignalsAndSave(liveData) {
-            activeSignals.forEach(async (sig) => {
-                const currentPrice = livePrices[sig.symbol];
-                if (!currentPrice) return;
-
-                let newStatus = sig.status;
-
-                // 1. ถ้าซิกกำลังรอเข้าโซน (Pending) -> เช็คว่าชนจุด Entry หรือยัง
-                if (sig.status === 'PENDING') {
-                    if (sig.type === 'BUY' && currentPrice <= sig.entry) newStatus = 'ACTIVE';
-                    if (sig.type === 'SELL' && currentPrice >= sig.entry) newStatus = 'ACTIVE';
+        function changeAsset(symbol, btnElement) {
+            document.querySelectorAll('#dashboard-view button').forEach(b => {
+                if(b.innerText.includes('XAU') || b.innerText.includes('EUR') || b.innerText.includes('BTC')){
+                    b.className = "px-3 py-1.5 text-xs font-medium rounded text-gray-400 hover:text-white transition-all";
                 }
+            });
+            btnElement.className = "px-3 py-1.5 text-xs font-medium rounded text-dark-900 bg-gold-500 transition-all";
+            loadTradingViewChart(symbol);
+        }
+
+        function calculateLot(riskPerc) {
+            const bal = parseFloat(document.getElementById('calc-balance').value);
+            const sl = parseFloat(document.getElementById('calc-sl').value);
+            if(!bal || !sl) return;
+            let lot = (bal * riskPerc) / (sl * 10);
+            document.getElementById('calc-result').innerText = Math.max(0.01, lot).toFixed(2);
+        }
+
+        // ==========================================
+        // FIREBASE FIRESTORE FUNCTIONS (ของจริง 100%)
+        // ==========================================
+
+        document.getElementById('btn-add-signal').addEventListener('click', () => {
+            document.getElementById('admin-signal-form').classList.toggle('hidden');
+        });
+
+        // 1. ฟังก์ชันเขียนข้อมูลลง Firebase
+        window.postSignalToFirebase = async function() {
+            const signalData = {
+                asset: document.getElementById('sig-asset').value.toUpperCase(),
+                type: document.getElementById('sig-type').value,
+                entry: parseFloat(document.getElementById('sig-entry').value),
+                tp: parseFloat(document.getElementById('sig-tp').value),
+                sl: parseFloat(document.getElementById('sig-sl').value),
+                status: 'pending',
+                timestamp: Date.now()
+            };
+
+            if(!signalData.asset || isNaN(signalData.entry)) {
+                return showToast('กรุณากรอกข้อมูลให้ครบถ้วน', 'error');
+            }
+
+            try {
+                // เรียกใช้ db และคำสั่งจาก window.firebaseTools ที่เราประกาศไว้ข้างบน
+                const { db, collection, addDoc } = window.firebaseTools;
                 
-                // 2. ถ้าไม้กำลังวิ่ง (Active) -> เช็คว่าชน TP หรือ SL หรือยัง
-                else if (sig.status === 'ACTIVE') {
-                    if (sig.type === 'BUY') {
-                        if (currentPrice >= sig.tp) newStatus = 'TP';       // ชนกำไร
-                        else if (currentPrice <= sig.sl) newStatus = 'SL';  // ชนขาดทุน
-                    } 
-                    else if (sig.type === 'SELL') {
-                        if (currentPrice <= sig.tp) newStatus = 'TP';
-                        else if (currentPrice >= sig.sl) newStatus = 'SL';
-                    }
+                // เขียนลง Collection ชื่อ 'signals'
+                await addDoc(collection(db, "signals"), signalData);
+                
+                document.getElementById('admin-signal-form').classList.add('hidden');
+                showToast('ส่งสัญญาณขึ้นระบบ Real-time สำเร็จ!');
+                
+                // ล้างค่าในฟอร์ม
+                ['sig-asset', 'sig-entry', 'sig-tp', 'sig-sl'].forEach(id => document.getElementById(id).value = '');
+            } catch (error) {
+                console.error("Firebase Error:", error);
+                showToast('เกิดข้อผิดพลาด: โปรดตรวจสอบ Rules ใน Firestore', 'error');
+            }
+        }
+
+        // 2. ฟังก์ชันอัปเดตสถานะ Active/TP/SL ลง Firebase
+        window.updateFirebaseSignal = async function(docId, newStatus) {
+            try {
+                const { db, doc, updateDoc } = window.firebaseTools;
+                
+                // อ้างอิงไปที่เอกสารเฉพาะตัว (docId) ใน Collection 'signals'
+                const docRef = doc(db, "signals", docId);
+                
+                // อัปเดตฟิลด์ status
+                await updateDoc(docRef, { status: newStatus });
+                showToast(`อัปเดตสถานะเป็น ${newStatus.toUpperCase()}`);
+            } catch (error) {
+                console.error("Firebase Error:", error);
+                showToast('เกิดข้อผิดพลาดในการอัปเดตข้อมูล', 'error');
+            }
+        };
+
+        // 3. ฟังก์ชันดึงข้อมูลแบบ Real-time (ทำงานเองอัตโนมัติเมื่อข้อมูลเปลี่ยน)
+        function setupFirebaseSignals() {
+            const { db, collection, query, orderBy, onSnapshot } = window.firebaseTools;
+            const container = document.getElementById('signals-container');
+
+            // ดึงข้อมูลจาก Collection 'signals' เรียงลำดับตามเวลา (ล่าสุดอยู่บน)
+            const q = query(collection(db, "signals"), orderBy("timestamp", "desc"));
+            
+            // onSnapshot เป็นหัวใจหลักของความ Real-time
+            onSnapshot(q, (snapshot) => {
+                container.innerHTML = ''; // เคลียร์หน้าจอก่อนวาดใหม่
+                
+                if (snapshot.empty) {
+                    container.innerHTML = '<div class="text-center text-gray-500 text-sm col-span-full py-8">ยังไม่มีสัญญาณเทรดในระบบ</div>';
+                    return;
                 }
 
-                // ถ้าสถานะมีการเปลี่ยนแปลง สั่งอัปเดตขึ้น Firebase
-                if (newStatus !== sig.status) {
-                    try {
-                        const sigRef = doc(db, 'artifacts', appId, 'public', 'data', 'signals', sig.id);
-                        await updateDoc(sigRef, { status: newStatus });
-                        
-                        // อัปเดตใน Memory ชั่วคราวก่อน snapshot จะทำงานรอบถัดไป
-                        sig.status = newStatus; 
-                    } catch (e) { console.error("Update Signal Status Error", e); }
-                }
+                snapshot.forEach((doc) => {
+                    const sig = { id: doc.id, ...doc.data() };
+                    
+                    // กำหนดสีตามสถานะ
+                    let statusUI = sig.status === 'pending' ? '<span class="text-yellow-500 bg-yellow-500/10 px-2 py-0.5 rounded text-[10px] animate-pulse">รอราคา</span>' :
+                                   sig.status === 'active' ? '<span class="text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded text-[10px] animate-pulse">ติดออเดอร์</span>' :
+                                   sig.status === 'tp' ? '<span class="text-green-500 bg-green-500/10 px-2 py-0.5 rounded text-[10px]">ชน TP</span>' :
+                                   '<span class="text-red-500 bg-red-500/10 px-2 py-0.5 rounded text-[10px]">ชน SL</span>';
+
+                    let typeColor = sig.type === 'BUY' ? 'text-green-500' : 'text-red-500';
+
+                    // ปุ่มอัปเดตสำหรับแอดมิน
+                    let adminBtns = state.user?.role === 'admin' ? `
+                        <div class="mt-3 flex gap-1 justify-end border-t border-gray-800 pt-2">
+                            <button onclick="updateFirebaseSignal('${sig.id}', 'active')" class="text-[10px] px-2 py-1 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30">Active</button>
+                            <button onclick="updateFirebaseSignal('${sig.id}', 'tp')" class="text-[10px] px-2 py-1 bg-green-500/20 text-green-500 rounded hover:bg-green-500/30">TP</button>
+                            <button onclick="updateFirebaseSignal('${sig.id}', 'sl')" class="text-[10px] px-2 py-1 bg-red-500/20 text-red-500 rounded hover:bg-red-500/30">SL</button>
+                        </div>
+                    ` : '';
+
+                    // สร้างการ์ดแสดงผล
+                    container.innerHTML += `
+                        <div class="glass-panel p-4 rounded-lg border border-gray-800 relative fade-in">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-bold text-white text-sm">${sig.asset} <span class="${typeColor} text-xs ml-1">${sig.type}</span></span>
+                                ${statusUI}
+                            </div>
+                            <div class="grid grid-cols-3 gap-1 text-center">
+                                <div class="bg-dark-900 rounded p-1"><p class="text-[9px] text-gray-500">Entry</p><p class="text-xs text-white">${sig.entry}</p></div>
+                                <div class="bg-dark-900 rounded p-1"><p class="text-[9px] text-gray-500">TP</p><p class="text-xs text-green-500">${sig.tp}</p></div>
+                                <div class="bg-dark-900 rounded p-1"><p class="text-[9px] text-gray-500">SL</p><p class="text-xs text-red-500">${sig.sl}</p></div>
+                            </div>
+                            ${adminBtns}
+                        </div>
+                    `;
+                });
+            }, (error) => {
+                console.error("Firebase Error:", error);
+                container.innerHTML = '<div class="text-red-500 text-center text-sm col-span-full py-8">อ่านข้อมูลล้มเหลว โปรดตรวจสอบ Security Rules ใน Firestore (ต้องเปิดเป็น Test mode)</div>';
             });
         }
 
-        initApp();
+        // --- MARKET NEWS SIMULATION ---
+        function startNewsSimulation() {
+            const newsContainer = document.getElementById('news-container');
+            const newsSources = [
+                { time: '10:30', text: 'ธนาคารกลางสหรัฐ (Fed) ประกาศคงอัตราดอกเบี้ย', impact: 'high' },
+                { time: '09:15', text: 'ตัวเลข NFP ออกมาดีกว่าคาดการณ์', impact: 'high' },
+                { time: '08:00', text: 'ราคาทองคำผันผวนหนัก', impact: 'medium' }
+            ];
+            newsContainer.innerHTML = newsSources.map(news => {
+                let color = news.impact === 'high' ? 'text-red-400' : 'text-yellow-400';
+                return `
+                    <div class="border-l-2 border-gray-700 pl-3 py-1 mb-2">
+                        <span class="text-[10px] text-gray-500">${news.time}</span>
+                        <p class="text-xs text-gray-300 leading-tight mt-0.5"><span class="${color} font-bold mr-1">•</span>${news.text}</p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast-enter flex items-center p-3 border-l-4 rounded bg-dark-800 ${type==='error'?'border-red-500 text-red-500 z-50':'border-gold-500 text-white'} text-sm shadow-xl`;
+            toast.innerHTML = message;
+            container.appendChild(toast);
+            requestAnimationFrame(() => { toast.classList.remove('toast-enter'); toast.classList.add('toast-enter-active'); });
+            setTimeout(() => { toast.classList.add('toast-exit'); setTimeout(() => toast.remove(), 300); }, 3000);
+        }
+
+        document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+        });
+
     </script>
 </body>
 </html>
-
-
-```
